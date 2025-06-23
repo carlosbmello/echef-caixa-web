@@ -3,7 +3,11 @@ import axios from 'axios';
 import { authService } from './authService'; // Assumindo que authService está correto
 
 // URL base da API para comandas
-const API_BASE_URL = 'http://localhost:3001/api'; // URL base da API
+// const API_BASE_URL = 'http://localhost:3001/api'; // URL base da API
+// A URL base viria da variável de ambiente
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3010/api'; // Fallback opcional
+
+
 const COMANDAS_API_ENDPOINT = `${API_BASE_URL}/comandas`; // Endpoint específico de comandas
 
 // Interface para representar uma Comanda (ajustada para consistência)

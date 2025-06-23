@@ -4,7 +4,11 @@ import { authService } from './authService'; // Reutiliza autenticação
 import { ItemPedido } from './itemPedidoService'; // Importa a interface de Item
 
 // Ajustar se a URL base da API for diferente para impressão
-const API_URL = 'http://localhost:3001/api/print';
+// const API_URL = 'http://localhost:3001/api/print';
+// A URL base viria da variável de ambiente
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3010/api'; // Fallback opcional
+
+const API_URL = `${API_BASE_URL}/print`; // Constrói a URL específica
 
 // Interface para os dados enviados para a impressão de conferência
 // Definir os campos que o backend precisará para formatar a nota

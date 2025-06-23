@@ -2,7 +2,12 @@
 import axios from 'axios';
 import { authService } from './authService';
 
-const API_URL_PEDIDOS = 'http://localhost:3001/api/pedidos';
+// A URL base viria da variável de ambiente
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3010/api'; // Fallback opcional
+
+const API_URL_PEDIDOS = `${API_BASE_URL}/pedidos`; // Constrói a URL específica
+
+// const API_URL_PEDIDOS = 'http://localhost:3001/api/pedidos';
 
 export interface ItemPedido {
   id: number;

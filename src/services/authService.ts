@@ -1,7 +1,11 @@
 // src/services/authService.ts
 import axios from 'axios';
 
-const API_URL = 'http://localhost:3001/api/auth'; // Ajuste se necessário
+// const API_URL = 'http://localhost:3001/api/auth'; // Ajuste se necessário
+// A URL base viria da variável de ambiente
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3010/api'; // Fallback opcional
+
+const API_URL = `${API_BASE_URL}/auth`; // Constrói a URL específica
 
 interface LoginCredentials { email: string; senha: string; }
 

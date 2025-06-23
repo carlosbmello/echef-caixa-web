@@ -2,7 +2,11 @@
 import axios from 'axios';
 import { authService } from './authService';
 
-const API_URL = 'http://localhost:3001/api/payment-methods'; // URL base
+// const API_URL = 'http://localhost:3001/api/payment-methods'; // URL base
+// A URL base viria da variável de ambiente
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3010/api'; // Fallback opcional
+
+const API_URL = `${API_BASE_URL}/payment-methods`; // Constrói a URL específica
 
 // Interface para Forma de Pagamento (como a API retorna)
 export interface PaymentMethod {

@@ -5,7 +5,11 @@ import { authService } from './authService';
 // Log de Carregamento (útil para depurar problemas de cache/import)
 console.log('>>> Módulo paymentService.ts CARREGADO <<<', new Date().toLocaleTimeString());
 
-const API_URL = 'http://localhost:3001/api/payments';
+// const API_URL = 'http://localhost:3001/api/payments';
+// A URL base viria da variável de ambiente
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3010/api'; // Fallback opcional
+
+const API_URL = `${API_BASE_URL}/payments`; // Constrói a URL específica
 
 // Interface para Pagamento (como a API retorna)
 export interface Payment {
