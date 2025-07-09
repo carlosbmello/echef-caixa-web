@@ -10,6 +10,7 @@ interface MovementFormModalProps {
   isOpen: boolean; // Controla se o modal está visível
   onClose: () => void; // Função para fechar o modal
   onSuccess: () => void; // Função a ser chamada após sucesso (ex: para recarregar dados)
+  sessionId: number | null;
 }
 
 const MovementFormModal: React.FC<MovementFormModalProps> = ({ isOpen, onClose, onSuccess }) => {

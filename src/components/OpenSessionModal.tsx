@@ -1,64 +1,120 @@
 // src/components/OpenSessionModal.tsx
-import React, { useState, useEffect } from 'react'; // <<< useEffect ADICIONADO AQUI
+import React, { useState, useEffect } from 'react';
 import { NumericFormat, NumberFormatValues } from 'react-number-format';
-import { sessionService } from '../services/sessionService'; // Ajuste o caminho se necessário
+// Importa o serviço e o TIPO DE PAYLOAD que ele espera
+import { sessionService, CreateSessionPayload } from '../services/sessionService';
+import { toast } from 'react-toastify';
 
 interface OpenSessionModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onSuccess: () => void; // Chamado após abrir com sucesso
+    onSuccess: () => void;
 }
 
-// Função auxiliar local para formatação
-const formatCurrencyModal = (value: string | number | null | undefined): string => {
-    const number = Number(String(value).replace(',', '.'));
-    if (value === null || value === undefined || isNaN(number)) return 'R$ 0,00';
-    return number.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-};
-
 const OpenSessionModal: React.FC<OpenSessionModalProps> = ({ isOpen, onClose, onSuccess }) => {
-    const [initialValue, setInitialValue] = useState<number | undefined>(undefined);
-    const [isLoading, setIsLoading] = useState(false);
+    // Renomeado para clareza
+    const [openingValue, setOpeningValue] = useState<number | undefined>(undefined);
+    const [isProcessing, setIsProcessing] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
     const handleValueChange = (values: NumberFormatValues) => {
-        setInitialValue(values.floatValue); // Pega o valor numérico
+        setOpeningValue(values.floatValue); // Pega o valor numérico
+    };
+
+    const handleCloseAndReset = () => {
+        setOpeningValue(undefined);
+        setError(null);
+        setIsProcessing(false);
+        onClose();
     };
 
     const handleOpenSession = async () => {
-        if (initialValue === undefined || initialValue < 0) {
+        if (openingValue === undefined || openingValue < 0) {
             setError("Por favor, informe um valor inicial válido (mínimo R$ 0,00).");
             return;
         }
-        setIsLoading(true); setError(null);
+
+        setIsProcessing(true);
+        setError(null);
+
         try {
-            console.log(`[OpenSessionModal] Tentando abrir com valor: ${initialValue}`);
-            await sessionService.openSession(initialValue);
-            console.log("[OpenSessionModal] Caixa aberto!");
-            onSuccess(); onClose(); setInitialValue(undefined);
-        } catch (err: any) { console.error("[OpenSessionModal] Erro:", err); setError(err.message || "Falha."); }
-        finally { setIsLoading(false); }
+            // --- CORREÇÃO PRINCIPAL AQUI ---
+            // Monta o payload conforme a interface `CreateSessionPayload`
+            const payload: CreateSessionPayload = {
+                valor_abertura: openingValue
+                // observacao_abertura: "Alguma observação" // Opcional, se você adicionar um campo para isso
+            };
+
+            console.log(`[OpenSessionModal] Tentando abrir sessão com payload:`, payload);
+            await sessionService.openSession(payload); // Envia o objeto payload
+
+            toast.success("Caixa aberto com sucesso!");
+            onSuccess(); // Notifica a página pai para recarregar os dados
+            handleCloseAndReset(); // Fecha o modal e reseta o estado interno
+
+        } catch (err: any) {
+            console.error("[OpenSessionModal] Erro ao abrir sessão:", err);
+            const errorMessage = err.response?.data?.message || err.message || "Falha ao abrir caixa.";
+            setError(errorMessage);
+            toast.error(errorMessage);
+        } finally {
+            setIsProcessing(false);
+        }
     };
 
-    // Hook para resetar o valor quando o modal for fechado externamente
-    // Este hook PRECISA do useEffect importado
+    // Efeito para resetar o estado quando o modal for fechado
     useEffect(() => {
-        console.log("[OpenSessionModal] useEffect rodando, isOpen:", isOpen); // Log de depuração
         if (!isOpen) {
-            console.log("[OpenSessionModal] Resetando estado local pois isOpen é false.");
-            setInitialValue(undefined);
-            setError(null);
-            setIsLoading(false);
+            handleCloseAndReset();
         }
-    }, [isOpen]); // Executa quando isOpen muda
+    }, [isOpen]);
 
-    if (!isOpen) { return null; }
+    if (!isOpen) {
+        return null;
+    }
 
-    // Estilização do Modal (usando Tailwind como exemplo)
     return (
         <div className="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-50 p-4 transition-opacity duration-300">
-             {/* ... (Resto do JSX do modal como na versão anterior) ... */}
-             <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-sm transform transition-all duration-300 scale-100"> <h2 className="text-xl font-semibold mb-4 text-center text-gray-800">Abrir Caixa</h2> {error && (<div role="alert" className="mb-4 text-center text-red-700 bg-red-100 border border-red-300 p-3 rounded-md text-sm"><p><b>Erro:</b> {error}</p></div>)} <div className="mb-5"><label htmlFor="initial-value" className="block text-sm font-medium text-gray-700 mb-1">Valor Inicial (Troco) *</label><NumericFormat id="initial-value" value={initialValue === undefined ? '' : initialValue} onValueChange={handleValueChange} thousandSeparator="." decimalSeparator="," prefix="R$ " decimalScale={2} fixedDecimalScale allowNegative={false} placeholder="R$ 0,00" className="w-full border border-gray-300 rounded-md px-3 py-2 text-lg text-center focus:ring-indigo-500 focus:border-indigo-500 disabled:bg-gray-100" autoFocus disabled={isLoading} /><p className='text-xs text-gray-500 mt-1 text-center'>Informe o valor disponível para troco.</p></div><div className="flex justify-between items-center gap-4 mt-6"><button type="button" onClick={onClose} disabled={isLoading} className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50">Cancelar</button><button type="button" onClick={handleOpenSession} disabled={isLoading || initialValue === undefined || initialValue < 0} className={`px-6 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white transition-colors duration-150 ${isLoading || initialValue === undefined || initialValue < 0 ? 'bg-green-300 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500'}`}>{isLoading ? 'Abrindo...' : 'Abrir Caixa'}</button></div></div>
+             <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-sm transform transition-all duration-300">
+                <div className="flex justify-between items-center mb-4">
+                     <h2 className="text-xl font-semibold text-gray-800">Abrir Caixa</h2>
+                     <button onClick={handleCloseAndReset} disabled={isProcessing} className="text-gray-400 hover:text-gray-700" aria-label="Fechar">
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+                 
+                 {error && (
+                     <div role="alert" className="mb-4 text-center text-red-700 bg-red-100 border border-red-300 p-3 rounded-md text-sm">
+                         <p><b>Erro:</b> {error}</p>
+                     </div>
+                 )}
+
+                 <div className="mb-5">
+                     <label htmlFor="opening-value" className="block text-sm font-medium text-gray-700 mb-1">Valor Inicial (Troco) *</label>
+                     <NumericFormat
+                         id="opening-value"
+                         value={openingValue === undefined ? '' : openingValue}
+                         onValueChange={handleValueChange}
+                         thousandSeparator="." decimalSeparator="," prefix="R$ "
+                         decimalScale={2} fixedDecimalScale allowNegative={false}
+                         placeholder="R$ 0,00"
+                         className="w-full border border-gray-300 rounded-md px-3 py-2 text-lg text-center focus:ring-indigo-500 focus:border-indigo-500 disabled:bg-gray-100"
+                         autoFocus
+                         disabled={isProcessing}
+                         onKeyDown={(e) => { if (e.key === 'Enter') handleOpenSession(); }}
+                     />
+                     <p className='text-xs text-gray-500 mt-1 text-center'>Informe o valor disponível em caixa para troco.</p>
+                 </div>
+
+                 <div className="flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-3 gap-3 mt-6">
+                     <button type="button" onClick={handleCloseAndReset} disabled={isProcessing} className="w-full sm:w-auto justify-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50">
+                        Cancelar
+                     </button>
+                     <button type="button" onClick={handleOpenSession} disabled={isProcessing || openingValue === undefined || openingValue < 0} className={`w-full sm:w-auto justify-center px-6 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white transition-colors duration-150 ${isProcessing || openingValue === undefined || openingValue < 0 ? 'bg-green-300 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500'}`}>
+                         {isProcessing ? 'Abrindo...' : 'Abrir Caixa'}
+                     </button>
+                 </div>
+             </div>
         </div>
     );
 };

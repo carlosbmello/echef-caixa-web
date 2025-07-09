@@ -1,5 +1,5 @@
 // src/App.tsx (echef-caixa-web)
-import { Routes, Route, Link, Navigate } from 'react-router-dom'; // Adicionado Navigate
+import { Routes, Route, Navigate } from 'react-router-dom'; // Adicionado Navigate
 import CashierLoginPage from './pages/CashierLoginPage';
 import CashierMainPage from './pages/CashierMainPage';
 import ProtectedRoute from './components/ProtectedRoute'; // Protege a rota principal
@@ -7,13 +7,13 @@ import { ToastContainer } from 'react-toastify'; // <-- ADICIONADA IMPORTAÇÃO 
 import { useAuth } from './contexts/AuthContext'; // Importar useAuth para o redirect
 
 // Componente simples para 404
-const NotFound = () => (
-  <div className='flex flex-col items-center justify-center h-screen'>
-    <h1 className='text-4xl font-bold text-red-500'>404 - Não Encontrado</h1>
-    {/* Opcional: Link para a página principal se autenticado, ou para login */}
-    <Link to="/" className='mt-4 text-blue-600 hover:underline'>Voltar para o Início</Link>
-  </div>
-);
+// const NotFound = () => (
+//  <div className='flex flex-col items-center justify-center h-screen'>
+//    <h1 className='text-4xl font-bold text-red-500'>404 - Não Encontrado</h1>
+//    {/* Opcional: Link para a página principal se autenticado, ou para login */}
+//    <Link to="/" className='mt-4 text-blue-600 hover:underline'>Voltar para o Início</Link>
+//  </div>
+// );
 
 function App() {
   const { isAuthenticated } = useAuth(); // Usar o hook useAuth aqui para o redirect
