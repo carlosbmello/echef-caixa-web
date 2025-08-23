@@ -1,6 +1,7 @@
 // src/services/comandaService.ts
 import axios from 'axios';
 import { authService } from './authService'; // Assumindo que authService está correto
+import type { ItemPedido } from './itemPedidoService';
 
 // URL base da API para comandas
 // const API_BASE_URL = 'http://localhost:3001/api'; // URL base da API
@@ -23,6 +24,7 @@ export interface Comanda {
   data_fechamento?: string | null;
   // Se a API para o caixa retorna total_atual_calculado (preferível) ou valor_total_calculado
   total_atual_calculado?: number | null; 
+  itens?: ItemPedido[]; 
   // valor_total_calculado?: string | number | null; // Se a API do caixa retornar este
   created_at?: string;
   updated_at?: string;

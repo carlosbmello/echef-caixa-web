@@ -43,6 +43,12 @@ const formatQuantity = (value: string | number | null | undefined): string => {
     return n.toLocaleString('pt-BR', { minimumFractionDigits: d, maximumFractionDigits: 3 });
 };
 
+// [NOVA PARTE] Adicionada esta interface para resolver o erro de build.
+// Ela estende a Comanda original e GARANTE que a propriedade 'itens' existe.
+interface ComandaComItens extends Comanda {
+    itens?: ItemPedido[];
+}
+
 // --- Componentes de Renderização Auxiliares (com JSX real) ---
 const CashierHeader: React.FC<{ user: any; onLogout: () => void; onToggleDark: () => void; isDark: boolean }> = ({ user, onLogout, onToggleDark, isDark }) => (
     <header className="bg-gray-800 dark:bg-gray-900 text-white p-3 sm:p-4 flex justify-between items-center shadow-md flex-shrink-0">
@@ -196,27 +202,36 @@ const CashierMainPage: React.FC = () => {
     const fetchComandaDetails = useCallback(async (comandas: Comanda[]) => {
         const comandaIds = comandas.map(c => c.id);
         if (comandaIds.length === 0) {
-            setComandaItems([]); setGroupPaymentsList([]); setGroupTotalConsumo(0); setGroupTotalPago(0); setComandaError(null); setGroupTaxaServico(0); setGroupAcrescimos(0); setGroupDescontos(0); setGroupTotalAPagar(0); setGroupSaldoDevedor(0); setIncluirTaxa(true); setNumeroPessoas(1);
+             setComandaItems([]); setGroupPaymentsList([]); setGroupTotalConsumo(0); setGroupTotalPago(0); setComandaError(null); setGroupTaxaServico(0); setGroupAcrescimos(0); setGroupDescontos(0); setGroupTotalAPagar(0); setGroupSaldoDevedor(0); setIncluirTaxa(true); setNumeroPessoas(1);
             return;
         }
         setIsLoadingItems(true); setIsLoadingPayments(true); setComandaError(null);
         try {
             const detailedComandasPromises = comandas.map(comanda => comandaService.getComandaByNumero(comanda.numero || comanda.id.toString()));
-            const detailedComandas = await Promise.all(detailedComandasPromises);
-            const allItems = detailedComandas.flatMap(comanda => (comanda.itens || []).map(item => ({ ...item, numero_comanda: comanda.numero, cliente_nome_comanda: comanda.cliente_nome })));
+            
+            // A CORREÇÃO ESTÁ AQUI: Nós aplicamos nosso tipo local `ComandaComItens`
+            const detailedComandas: ComandaComItens[] = await Promise.all(detailedComandasPromises);
+            
+            // Agora o restante do código funciona sem erros
+            const allItems = detailedComandas.flatMap(comanda =>
+                (comanda.itens || []).map(item => ({
+                    ...item,
+                    numero_comanda: comanda.numero,
+                    cliente_nome_comanda: comanda.cliente_nome
+                }))
+            );
+            
             setComandaItems(allItems);
             const totalConsumo = detailedComandas.reduce((sum, comanda) => sum + Number(comanda.total_atual_calculado || 0), 0);
             setGroupTotalConsumo(totalConsumo);
             
-            // [CORREÇÃO APLICADA AQUI]
-            // Usando getPaymentsByComandaId em vez de getPaymentsBySessionId
             const paymentPromises = comandaIds.map(id => paymentService.getPaymentsByComandaId(id).catch(() => []));
             const paymentResults = await Promise.all(paymentPromises);
             const allRawPayments: Payment[] = paymentResults.flat();
             setGroupPaymentsList(allRawPayments);
             
             const totalPagoCalc = allRawPayments.reduce((s, p) => s + Number(p.valor || 0), 0);
-            setGroupTotalPago(totalPagoCalc); // O valor já vem como decimal, não precisa dividir
+            setGroupTotalPago(totalPagoCalc);
         } catch (err: any) {
             setComandaError(err.message || "Falha ao carregar detalhes da comanda.");
             setComandaItems([]);
@@ -225,7 +240,7 @@ const CashierMainPage: React.FC = () => {
             setIsLoadingPayments(false);
         }
     }, []);
-
+    
     const handleRegisterPayment = async (e: React.FormEvent) => {
         e.preventDefault();
         if(!selectedComandas.length || !openSession) return;
@@ -245,7 +260,7 @@ const CashierMainPage: React.FC = () => {
             const payload: CreateGroupPaymentPayload = {
                 comandaIds: selectedComandas.map(c => c.id),
                 forma_pagamento_id: fId,
-                valor: val,
+                valor: val, // Envia o valor decimal diretamente
                 detalhes: paymentDetails.trim() || null
             };
             await paymentService.registerGroupPayment(payload);
@@ -253,7 +268,7 @@ const CashierMainPage: React.FC = () => {
             setSelectedPaymentMethodId('');
             setPaymentValueNum(undefined);
             setPaymentDetails('');
-            await fetchComandaDetails(selectedComandas);
+            await fetchComandaDetails(selectedComandas); // Rebusca os dados para atualizar a tela
         } catch (err: any) {
             setComandaError(err.message);
             toast.error(err.message || "Erro ao registrar pagamento.");
@@ -280,7 +295,7 @@ const CashierMainPage: React.FC = () => {
     const handleLogout=()=>{logout();};
     const handleIniciarFechamento=()=>{setComandaError(null);setViewMode('fechamento');};
     const handleVoltarParaMonitor=()=>{setViewMode('monitor');fetchOpenComandas();};
-    
+
     // 3. Hooks de Efeito (useEffect)
     useEffect(() => {
         if (!initialFetchDoneRef.current) {
