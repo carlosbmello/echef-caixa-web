@@ -3,7 +3,7 @@ import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
 import { format } from 'date-fns';
 import { comandaServiceCaixa, ComandaFechadaResumo, ConsultaDetalheResponse } from '../services/comandaService';
-import { formatCurrency, formatDateTime } from '../utils/formatters';
+import { formatCurrency, formatDateTime, formatQuantity } from '../utils/formatters';
 import { FiPrinter } from 'react-icons/fi';
 import { printService } from '../services/printService';
 import { toast } from 'react-toastify';
@@ -16,8 +16,8 @@ interface ConsultaComandaModalProps {
 const ConsultaComandaModal: React.FC<ConsultaComandaModalProps> = ({ isOpen, onClose }) => {
     const [activeTab, setActiveTab] = useState<'data' | 'numero'>('data');
     
-    const [startDate, setStartDate] = useState(new Date());
-    const [endDate, setEndDate] = useState(new Date());
+    const [startDate, setStartDate] = useState<Date | null>(new Date());
+    const [endDate, setEndDate] = useState<Date | null>(new Date());
     const [listaComandas, setListaComandas] = useState<ComandaFechadaResumo[]>([]);
 
     const [numeroBusca, setNumeroBusca] = useState('');
@@ -27,19 +27,34 @@ const ConsultaComandaModal: React.FC<ConsultaComandaModalProps> = ({ isOpen, onC
     const [error, setError] = useState<string | null>(null);
 
     const handleSearchByDate = async () => {
-        setIsLoading(true); setError(null); setListaComandas([]); setDetalheConsulta(null);
-        try {
-            const di = format(startDate, 'yyyy-MM-dd');
-            const df = format(endDate, 'yyyy-MM-dd');
-            const result = await comandaServiceCaixa.consultarListaFechadas(di, df);
-            if (!result || result.length === 0) {
-                setError("Nenhuma comanda fechada encontrada para este período.");
-            } else {
-                setListaComandas(result);
-            }
-        } catch (err: any) { setError(err.message || "Erro ao buscar comandas."); }
-        finally { setIsLoading(false); }
-    };
+    setIsLoading(true);
+    setError(null);
+    setListaComandas([]);
+    setDetalheConsulta(null);
+
+    // [CORREÇÃO] Adiciona uma verificação para garantir que as datas não são nulas
+    if (!startDate || !endDate) {
+        setError("Por favor, selecione as datas de início e fim.");
+        setIsLoading(false);
+        return;
+    }
+
+    try {
+        const di = format(startDate, 'yyyy-MM-dd');
+        const df = format(endDate, 'yyyy-MM-dd');
+        const result = await comandaServiceCaixa.consultarListaFechadas(di, df);
+        if (!result || result.length === 0) {
+            setError("Nenhuma comanda fechada encontrada para este período.");
+        } else {
+            setListaComandas(result);
+        }
+    } catch (err: any) {
+        setError(err.message || "Erro ao buscar comandas.");
+    } finally {
+        setIsLoading(false);
+    }
+};
+
 
     const handleSearchByNumber = async (num: string) => {
         if (!num.trim()) return;
@@ -150,7 +165,8 @@ const handleReimprimirRecibo = async () => {
                     <div>
                         <h2 className="text-2xl font-bold mb-2">Consultar Comanda</h2>
                         <div className="flex border-b dark:border-gray-600">
-                            <button onClick={() => { setActiveTab('data'); setDetalheConsulta(null); setError(null); }} className={`px-4 py-2 text-sm ${activeTab === 'data' ? 'border-b-2 border-blue-500 font-semibold text-blue-500' : 'text-gray-500'}`}>Por Data</button>
+                            <button 
+                                onClick={() => { setActiveTab('data'); setDetalheConsulta(null); setError(null); }}  className={`px-4 py-2 text-sm ${activeTab === 'data' ? 'border-b-2 border-blue-500 font-semibold text-blue-500' : 'text-gray-500'}`}>Por Data</button>
                             <button onClick={() => { setActiveTab('numero'); setListaComandas([]); setError(null); }} className={`px-4 py-2 text-sm ${activeTab === 'numero' ? 'border-b-2 border-blue-500 font-semibold text-blue-500' : 'text-gray-500'}`}>Por Número</button>
                         </div>
                     </div>
@@ -164,8 +180,8 @@ const handleReimprimirRecibo = async () => {
                     {activeTab === 'data' && !isLoading && !error && (
                         <div>
                             <div className="flex items-center gap-4 mb-4 p-2 bg-gray-50 dark:bg-gray-700 rounded">
-                                <DatePicker selected={startDate} onChange={(date: Date) => setStartDate(date)} className="w-full border rounded px-2 py-1.5 text-sm dark:bg-gray-800" dateFormat="dd/MM/yyyy" />
-                                <DatePicker selected={endDate} onChange={(date: Date) => setEndDate(date)} className="w-full border rounded px-2 py-1.5 text-sm dark:bg-gray-800" dateFormat="dd/MM/yyyy" />
+                                <DatePicker selected={startDate} onChange={(date: Date | null) => setStartDate(date)} className="w-full border rounded px-2 py-1.5 text-sm dark:bg-gray-800" dateFormat="dd/MM/yyyy" />
+                                <DatePicker selected={endDate} onChange={(date: Date | null) => setEndDate(date)} className="w-full border rounded px-2 py-1.5 text-sm dark:bg-gray-800" dateFormat="dd/MM/yyyy" />
                                 <button onClick={handleSearchByDate} disabled={isLoading} className="px-4 py-1.5 border rounded bg-blue-600 text-white text-sm disabled:opacity-50">Buscar</button>
                             </div>
                             <div className="max-h-96 overflow-y-auto">
