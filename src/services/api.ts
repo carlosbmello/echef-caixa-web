@@ -1,10 +1,9 @@
 import axios from 'axios';
 
-alert('API Module Loading'); // Teste visível
 console.log('=== API INITIALIZATION ===');
 
 const api = axios.create({
-  baseURL: 'http://localhost:3010',
+  baseURL: 'http://localhost:3010/api',
   headers: {
     'Content-Type': 'application/json'
   },
@@ -12,8 +11,13 @@ const api = axios.create({
 });
 
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
-  console.log('Token found:', !!token);
+  // 1. Busca o token com a chave correta
+  const token = localStorage.getItem('authToken');
+  
+  // 2. Loga a variável correta ('token')
+  console.log(`Buscando token com a chave 'authToken'. Encontrado: ${!!token}`);
+
+  // Log dos detalhes da requisição (opcional, mas útil)
   console.log('Full Request Details:', {
     url: `${config.baseURL}${config.url}`,
     method: config.method,
@@ -24,9 +28,9 @@ api.interceptors.request.use((config) => {
 
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
-    console.log('Authorization header set:', config.headers.Authorization);
+    console.log('Authorization header set.');
   } else {
-    console.warn('No token found in localStorage');
+    console.warn("No token found in localStorage with key 'authToken'.");
   }
   return config;
 }, (error) => {
@@ -44,8 +48,7 @@ api.interceptors.response.use(
     console.log('Response Interceptor Success:', {
       url: response.config.url,
       status: response.status,
-      statusText: response.statusText,
-      data: response.data,
+      // data: response.data, // Pode ser útil descomentar para ver a resposta
       timestamp: new Date().toISOString()
     });
     return response;
@@ -54,16 +57,15 @@ api.interceptors.response.use(
     console.error('Response Interceptor Error:', {
       url: error.config?.url,
       status: error.response?.status,
-      statusText: error.response?.statusText,
       data: error.response?.data,
       message: error.message,
-      stack: error.stack,
       timestamp: new Date().toISOString()
     });
     
     if (error.response?.status === 401) {
       console.warn('Authentication failed - redirecting to login');
-      localStorage.removeItem('token');
+      // Garante que está removendo a chave correta
+      localStorage.removeItem('authToken');
       window.location.href = '/login';
       return Promise.reject(new Error('Authentication failed'));
     }

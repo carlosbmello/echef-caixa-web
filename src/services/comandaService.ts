@@ -31,6 +31,29 @@ export interface Comanda {
   // Adicione o array de itens se o caixa precisar ver os itens antes de fechar
   // itens?: Array<{ produto_nome: string; quantidade: number; preco_total_item: number; }>; // Exemplo simplificado
 }
+export interface Lancamento {
+  id: number;
+  transacao_uuid: string;
+  tipo_lancamento: 'consumo' | 'taxa_servico' | 'acrescimo' | 'desconto' | 'pagamento';
+  descricao: string;
+  valor: string; // Vem como string do backend
+  forma_pagamento_id?: number;
+  nome_forma_pagamento?: string;
+  data_hora: string;
+}
+export interface ComandaFechadaResumo {
+    id: number;
+    numero: string;
+    cliente_nome: string | null;
+    data_fechamento: string;
+    valor_total_pago: number;
+}
+
+export interface ConsultaDetalheResponse {
+    comandas: Comanda[]; // Reutiliza a interface Comanda que já tem a propriedade 'itens'
+    pagamentos: Payment[]; // Supondo que você tenha a interface Payment do paymentService
+    lancamentos: Lancamento[];
+}
 
 // Tipo para o payload de atualização de status individual
 export type UpdateComandaPayload = {
@@ -106,6 +129,27 @@ const getComandaPorIdNumerico = async (comandaId: number): Promise<Comanda> => {
     } catch (error) { /* ... (tratamento de erro similar ao getComandaByNumero) ... */ throw error; }
 };
 
+const consultarListaFechadas = async (dataInicial: string, dataFinal: string): Promise<ComandaFechadaResumo[]> => {
+    try {
+        const config = { ...getAuthConfig(), params: { dataInicial, dataFinal } };
+        const response = await axios.get<ComandaFechadaResumo[]>(`${COMANDAS_API_ENDPOINT}/consultar-lista`, config);
+        return response.data || [];
+    } catch (error: any) {
+        console.error('Erro [Service] ao consultar lista de comandas fechadas:', error);
+        throw new Error(error.response?.data?.message || 'Falha ao buscar comandas fechadas.');
+    }
+};
+
+const consultarDetalheFechada = async (numeroComanda: string): Promise<ConsultaDetalheResponse> => {
+    try {
+        const config = getAuthConfig();
+        const response = await axios.get<ConsultaDetalheResponse>(`${COMANDAS_API_ENDPOINT}/consultar-detalhe/${numeroComanda}`, config);
+        return response.data;
+    } catch (error: any) {
+        console.error(`Erro [Service] ao consultar detalhes da comanda ${numeroComanda}:`, error);
+        throw new Error(error.response?.data?.message || `Falha ao buscar detalhes da comanda ${numeroComanda}.`);
+    }
+};
 
 // Buscar TODAS as comandas com filtros (GET /)
 const getAllComandas = async (params?: { status?: string; }): Promise<Comanda[]> => {
@@ -147,4 +191,6 @@ export const comandaServiceCaixa = { // Renomeado para evitar conflito se você 
     updateComandaStatus,
     getAllComandas,
     closeComandaGroup,
+    consultarListaFechadas,
+    consultarDetalheFechada
 };

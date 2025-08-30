@@ -1,0 +1,139 @@
+Guia de Integração: Módulo de Caixa e Serviço de Impressão
+1. Conceito Principal
+O Módulo de Caixa não se comunica diretamente com a impressora. Sua única responsabilidade é coletar os dados necessários, montar um objeto JSON e solicitar uma impressão ao eChef-Backend através de uma única função de serviço.
+Toda a complexidade de formatação, gerenciamento de fila, retentativas e comunicação com o hardware é delegada ao eChef-Backend e ao eChef-Print-Bridge.
+
+2. A Função a Ser Chamada
+Para solicitar qualquer tipo de impressão, utilize a função imprimirPorPonto do printService.
+
+Como Importar:
+O caminho para o printService pode variar dependendo da estrutura de pastas do seu Módulo de Caixa.
+
+code JavaScript
+const printService = require('../services/printService');
+
+Assinatura da função:
+A função deve ser chamada com await, pois é uma operação assíncrona.
+code JavaScript
+await printService.imprimirPorPonto(pontoId, jobData, jobType);
+
+pontoId (Obrigatório): O ID do ponto de impressão de destino (ex: o ID da impressora do Caixa).
+jobData (Obrigatório): Um objeto JSON contendo todos os dados a serem impressos. A estrutura deste objeto muda dependendo do tipo de impressão.
+jobType (Obrigatório): Uma string que define qual "template" de impressão será usado.
+
+3. Tipos de Impressão (jobType) Disponíveis para o Caixa
+Existem dois jobTypes principais que o Módulo de Caixa pode solicitar:
+'pedidos': (echef-pedidos-web) Para imprimir comandas de produção destinadas à Cozinha ou ao Bar. Este tipo geralmente não é usado pelo Caixa, mas está disponível.
+'clienteConta': (echef-caixa-web)(Impressão 1) Para imprimir a conta detalhada do cliente antes do pagamento, mostrando todo o consumo e o resumo dos valores.
+'clientePagtos': (echef-caixa-web)(Impressão 2) Para imprimir o recibo final após o pagamento, mostrando o consumo, o resumo e o detalhe dos pagamentos realizados.
+
+4. Estrutura dos Dados (jobData) para Cada jobType
+É crucial que o jobData enviado siga exatamente a estrutura esperada para cada jobType.
+A. jobType: 'clienteConta'
+Este jobData deve conter todo o consumo e o resumo da transação. Importante: as chaves pagamentos e totalPago devem ser omitidas.
+Exemplo de jobData para clienteConta:
+code JSON
+{
+  "cabecalho": {
+    "linha1": "NEVERLAND BAR",
+    "linha2": "Sua casa de espetaculos"
+  },
+  "comandas": [
+    {
+      "numero": "5052",
+      "clienteNome": "cliente 5052",
+      "itens": [
+        { "quantidade": "1.000x", "nome": "x salada", "valor": "R$ 30,00" },
+        { "quantidade": "1.000x", "nome": "original 300ml", "valor": "R$ 10,00" }
+      ]
+    },
+    {
+      "numero": "5053",
+      "clienteNome": "cliente 5053",
+      "itens": [
+        { "quantidade": "1.000x", "nome": "original 300ml", "valor": "R$ 10,00" }
+      ]
+    }
+  ],
+  "resumoTransacao": {
+    "consumo": [
+      { "descricao": "Consumo Comanda 5052", "valor": "R$ 40,00" },
+      { "descricao": "Consumo Comanda 5053", "valor": "R$ 10,00" }
+    ],
+    "taxaServico": { "descricao": "(+) Taxa de Serviço (10%)", "valor": "R$ 5,00" },
+    "acrescimos": { "descricao": "(+) Acréscimos", "valor": "R$ 0,00" },
+    "descontos": { "descricao": "(-) Descontos", "valor": "R$ 0,00" },
+    "totalConta": { "descricao": "Total da Conta", "valor": "R$ 55,00" }
+  }
+}
+B. jobType: 'clientePagtos'
+A estrutura é idêntica à de clienteConta, mas com a adição obrigatória das chaves pagamentos e totalPago.
+Exemplo de jobData para clientePagtos:
+code
+JSON
+{
+  "cabecalho": {
+    "linha1": "NEVERLAND BAR",
+    "linha2": "Sua casa de espetaculos"
+  },
+  "comandas": [
+    {
+      "numero": "5052",
+      "clienteNome": "cliente 5052",
+      "itens": [
+        { "quantidade": "1.000x", "nome": "x salada", "valor": "R$ 30,00" }
+      ]
+    }
+  ],
+  "resumoTransacao": {
+    "consumo": [
+      { "descricao": "Consumo Comanda 5052", "valor": "R$ 30,00" }
+    ],
+    "taxaServico": { "descricao": "(+) Taxa de Serviço (10%)", "valor": "R$ 3,00" },
+    "acrescimos": { "descricao": "(+) Acréscimos", "valor": "R$ 0,00" },
+    "descontos": { "descricao": "(-) Descontos", "valor": "R$ 0,00" },
+    "totalConta": { "descricao": "Total da Conta", "valor": "R$ 33,00" }
+  },
+  "pagamentos": [
+    { "metodo": "debito", "data": "28/08/25 15:00", "valor": "R$ 33,00" }
+  ],
+  "totalPago": "R$ 33,00"
+}
+
+5. Exemplo de Implementação (Botão "Reimprimir Recibo")
+Este exemplo mostra como a lógica no Módulo de Caixa deve ser estruturada.
+code JavaScript
+// Dentro de um controller ou service do Módulo de Caixa...
+
+const printService = require('../services/printService');
+
+async function reimprimirReciboCompleto(transacaoId) {
+    const PONTO_ID_CAIXA = 3; // O ID da impressora do Caixa
+
+    try {
+        // 1. Buscar no banco de dados todas as informações da transação.
+        const dadosDaTransacao = await buscarDadosCompletosDaTransacao(transacaoId);
+
+        // 2. Montar o objeto jobData com a estrutura exata de 'clientePagtos'.
+        const jobData = {
+            cabecalho: {
+                linha1: "NEVERLAND BAR",
+                linha2: "Sua casa de espetaculos"
+            },
+            comandas: dadosDaTransacao.comandas, // Array de comandas
+            resumoTransacao: dadosDaTransacao.resumo, // Objeto com o resumo
+            pagamentos: dadosDaTransacao.pagamentos, // Array de pagamentos
+            totalPago: dadosDaTransacao.totalPago // String do total
+        };
+
+        // 3. Chamar o serviço de impressão com o jobType correto.
+        await printService.imprimirPorPonto(PONTO_ID_CAIXA, jobData, 'clientePagtos');
+
+        console.log(`Solicitação de reimpressão para a transação ${transacaoId} enviada para a fila.`);
+        return { success: true, message: 'Recibo enviado para impressão.' };
+
+    } catch (error) {
+        console.error(`Falha ao solicitar reimpressão da transação ${transacaoId}:`, error.message);
+        return { success: false, message: 'Erro ao enviar recibo para impressão.' };
+    }
+}
