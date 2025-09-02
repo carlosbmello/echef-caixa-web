@@ -1,13 +1,13 @@
 // src/services/comandaService.ts
-import axios from 'axios';
-import { authService } from './authService';
+
+// [CORREÇÃO] Importa a nossa instância centralizada do Axios
+import api from './api';
+
+// [CORREÇÃO] Importa apenas os TIPOS que precisamos
 import type { ItemPedido } from './itemPedidoService';
 import type { Payment } from './paymentService';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3010/api';
-const COMANDAS_API_ENDPOINT = `${API_BASE_URL}/comandas`;
-
-// --- [CORREÇÃO] INTERFACES AGRUPADAS E SEM DUPLICAÇÃO ---
+// --- INTERFACES ---
 
 export interface Comanda {
   id: number;
@@ -42,7 +42,6 @@ export interface ComandaFechadaResumo {
     valor_total_pago: number;
 }
 
-// [CORREÇÃO] Apenas uma definição da interface, usando o tipo 'Comanda'
 export interface ConsultaDetalheResponse {
     comandas: Comanda[];
     pagamentos: Payment[];
@@ -69,59 +68,43 @@ export interface CloseGroupResponse {
     affectedRows: number;
 }
 
-const getAuthConfig = () => {
-    const token = authService.getToken();
-    if (!token) throw new Error('Token de autenticação não encontrado.');
-    return { headers: { Authorization: `Bearer ${token}` } };
-};
-
-// --- Funções do Serviço ---
+// --- Funções do Serviço Refatoradas ---
 
 const getComandaByNumero = async (numeroComanda: string): Promise<Comanda> => {
     console.log(`[Caixa Service] Buscando comanda por NÚMERO: '${numeroComanda}'`);
     try {
-        const config = getAuthConfig();
-        const response = await axios.get<Comanda>(`${COMANDAS_API_ENDPOINT}/numero/${numeroComanda}`, config);
-        
-        if (!response.data) {
-            console.warn(`[Caixa Service] Comanda número '${numeroComanda}' não encontrada (API retornou sem dados).`);
+        const { data } = await api.get<Comanda>(`/comandas/numero/${numeroComanda}`);
+        if (!data) {
             throw new Error(`Comanda '${numeroComanda}' não encontrada.`);
         }
-        console.log(`[Caixa Service] Comanda número '${numeroComanda}' encontrada:`, response.data);
-        return response.data;
-    } catch (error) {
+        console.log(`[Caixa Service] Comanda número '${numeroComanda}' encontrada:`, data);
+        return data;
+    } catch (error: any) {
         console.error(`Erro [Caixa Service] ao buscar comanda por NÚMERO '${numeroComanda}':`, error);
-        if (axios.isAxiosError(error) && error.response) {
-             if (error.response.status === 404) {
-                throw new Error(`Comanda '${numeroComanda}' não encontrada.`);
-             }
-           throw new Error(error.response.data.message || `Erro ${error.response.status} ao buscar comanda.`);
-        } else if (error instanceof Error) {
-            throw error;
-        } else {
-            throw new Error(`Erro de rede ou servidor indisponível ao buscar comanda.`);
-        }
+        throw new Error(error.response?.data?.message || `Falha ao buscar comanda ${numeroComanda}.`);
     }
 };
 
 const getComandaPorIdNumerico = async (comandaId: number): Promise<Comanda> => {
     console.log(`[Caixa Service] Buscando comanda por ID NUMÉRICO: ${comandaId}`);
     try {
-        const config = getAuthConfig();
-        const response = await axios.get<Comanda>(`${COMANDAS_API_ENDPOINT}/id/${comandaId}`, config);
-        if (!response.data) {
-             console.warn(`[Caixa Service] Comanda ID '${comandaId}' não encontrada (API retornou sem dados).`);
+        const { data } = await api.get<Comanda>(`/comandas/id/${comandaId}`);
+        if (!data) {
             throw new Error(`Comanda com ID '${comandaId}' não encontrada.`);
         }
-        return response.data;
-    } catch (error) { throw error; }
+        return data;
+    } catch (error: any) {
+        console.error(`Erro [Caixa Service] ao buscar comanda por ID '${comandaId}':`, error);
+        throw new Error(error.response?.data?.message || `Falha ao buscar comanda ${comandaId}.`);
+    }
 };
 
 const consultarListaFechadas = async (dataInicial: string, dataFinal: string): Promise<ComandaFechadaResumo[]> => {
     try {
-        const config = { ...getAuthConfig(), params: { dataInicial, dataFinal } };
-        const response = await axios.get<ComandaFechadaResumo[]>(`${COMANDAS_API_ENDPOINT}/consultar-lista`, config);
-        return response.data || [];
+        const { data } = await api.get<ComandaFechadaResumo[]>('/comandas/consultar-lista', {
+            params: { dataInicial, dataFinal }
+        });
+        return data || [];
     } catch (error: any) {
         console.error('Erro [Service] ao consultar lista de comandas fechadas:', error);
         throw new Error(error.response?.data?.message || 'Falha ao buscar comandas fechadas.');
@@ -130,9 +113,8 @@ const consultarListaFechadas = async (dataInicial: string, dataFinal: string): P
 
 const consultarDetalheFechada = async (numeroComanda: string): Promise<ConsultaDetalheResponse> => {
     try {
-        const config = getAuthConfig();
-        const response = await axios.get<ConsultaDetalheResponse>(`${COMANDAS_API_ENDPOINT}/consultar-detalhe/${numeroComanda}`, config);
-        return response.data;
+        const { data } = await api.get<ConsultaDetalheResponse>(`/comandas/consultar-detalhe/${numeroComanda}`);
+        return data;
     } catch (error: any) {
         console.error(`Erro [Service] ao consultar detalhes da comanda ${numeroComanda}:`, error);
         throw new Error(error.response?.data?.message || `Falha ao buscar detalhes da comanda ${numeroComanda}.`);
@@ -142,27 +124,32 @@ const consultarDetalheFechada = async (numeroComanda: string): Promise<ConsultaD
 const getAllComandas = async (params?: { status?: string; }): Promise<Comanda[]> => {
     console.log('[Caixa Service] Buscando todas as comandas com filtros:', params);
     try {
-        const config = { ...getAuthConfig(), params: params || {} };
-        const response = await axios.get<Comanda[]>(COMANDAS_API_ENDPOINT, config);
-        return response.data || [];
-    } catch (error) { throw error; }
+        const { data } = await api.get<Comanda[]>('/comandas', { params: params || {} });
+        return data || [];
+    } catch (error: any) {
+        console.error('Erro [Service] ao buscar todas as comandas:', error);
+        throw new Error(error.response?.data?.message || 'Falha ao buscar comandas.');
+    }
 };
 
 const updateComandaStatus = async (id: number, payload: UpdateComandaPayload): Promise<Comanda> => {
     try {
-        const config = getAuthConfig();
-        const response = await axios.put<{ message: string, comanda: Comanda }>(`${COMANDAS_API_ENDPOINT}/${id}`, payload, config);
-        return response.data.comanda;
-    } catch (error) { throw error; }
+        const { data } = await api.put<{ message: string, comanda: Comanda }>(`/comandas/${id}`, payload);
+        return data.comanda;
+    } catch (error: any) {
+        console.error(`Erro [Service] ao atualizar comanda ${id}:`, error);
+        throw new Error(error.response?.data?.message || `Falha ao atualizar comanda ${id}.`);
+    }
 };
 
 const closeComandaGroup = async (payload: CloseGroupPayload): Promise<CloseGroupResponse> => {
-    const endpoint = `${COMANDAS_API_ENDPOINT}/fechar-grupo`;
     try {
-        const config = getAuthConfig();
-        const response = await axios.post<CloseGroupResponse>(endpoint, payload, config);
-        return response.data;
-    } catch (error) { throw error; }
+        const { data } = await api.post<CloseGroupResponse>('/comandas/fechar-grupo', payload);
+        return data;
+    } catch (error: any) {
+        console.error('Erro [Service] ao fechar grupo de comandas:', error);
+        throw new Error(error.response?.data?.message || 'Falha ao fechar grupo de comandas.');
+    }
 };
 
 export const comandaServiceCaixa = {
