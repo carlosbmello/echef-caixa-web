@@ -1,6 +1,6 @@
 // src/services/comandaService.ts
 
-// [CORREÇÃO] Importa a nossa instância centralizada do Axios
+// [CORREÇÃO] Importa a nossa instância centralizada do Axios Ajustes
 import api from './api';
 
 // [CORREÇÃO] Importa apenas os TIPOS que precisamos
