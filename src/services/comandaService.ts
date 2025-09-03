@@ -122,7 +122,7 @@ const consultarDetalheFechada = async (numeroComanda: string): Promise<ConsultaD
 };
 
 const getAllComandas = async (params?: { status?: string; }): Promise<Comanda[]> => {
-    console.log('[Caixa Service] Buscando todas as comandas com filtros:', params);
+    console.log('[Caixa Service_v1] Buscando todas as comandas com filtros:', params);
     try {
         const { data } = await api.get<Comanda[]>('/comandas', { params: params || {} });
         return data || [];
