@@ -1,82 +1,82 @@
-// src/services/sessionService.ts
+// src/services/paymentMethodService.ts
 import api from './api';
 
 // --- INTERFACES (permanecem as mesmas) ---
-export interface Session {
+export interface PaymentMethod {
   id: number;
-  usuario_abertura_id: number;
-  nome_usuario_abertura?: string;
-  data_abertura: string;
-  valor_abertura: string | number;
-  usuario_fechamento_id?: number | null;
-  nome_usuario_fechamento?: string | null;
-  data_fechamento?: string | null;
-  valor_fechamento_calculado?: string | number | null;
-  valor_fechamento_informado?: string | number | null;
-  diferenca_caixa?: string | number | null;
-  observacao_fechamento?: string | null;
-  status?: 'aberta' | 'fechada';
+  nome: string;
+  tipo: 'dinheiro' | 'cartao_debito' | 'cartao_credito' | 'pix' | 'voucher' | 'outro';
+  ativo: boolean;
   created_at?: string;
   updated_at?: string;
 }
 
-export interface CreateSessionPayload {
-    valor_abertura: number;
-    observacao_abertura?: string | null;
-}
-
-export interface CloseSessionPayload {
-    valor_fechamento_informado: number;
-    observacao_fechamento?: string | null;
-}
-
-interface SessionApiResponse {
+interface ApiResponse {
     message: string;
-    session: Session;
+    paymentMethod: PaymentMethod;
 }
 
-interface LastOpenApiResponse {
-    message?: string;
-    session: Session | null;
-}
+type PaymentMethodPayload = Partial<Omit<PaymentMethod, 'id' | 'created_at' | 'updated_at'>>;
+type CreatePaymentMethodPayload = Required<Pick<PaymentMethodPayload, 'nome' | 'tipo'>> & PaymentMethodPayload;
+type UpdatePaymentMethodPayload = PaymentMethodPayload;
 
 // --- Funções do Serviço (Refatoradas) ---
 
-const openSession = async (payload: CreateSessionPayload): Promise<Session> => {
+const getAllPaymentMethods = async (filter?: { ativo?: boolean }): Promise<PaymentMethod[]> => {
+  try {
+    const { data } = await api.get<PaymentMethod[]>('/payment-methods', { params: filter });
+    return data || [];
+  } catch (error: any) {
+    console.error('Erro [Service] ao buscar formas de pagamento:', error);
+    throw new Error(error.response?.data?.message || 'Falha ao buscar formas de pagamento.');
+  }
+};
+
+const getPaymentMethodById = async (id: number): Promise<PaymentMethod> => {
     try {
-        const { data } = await api.post<SessionApiResponse>('/sessions/open', payload);
-        return data.session;
+        const { data } = await api.get<PaymentMethod>(`/payment-methods/${id}`);
+        return data;
     } catch (error: any) {
-        console.error('Erro [Service] ao abrir sessão:', error);
-        throw new Error(error.response?.data?.message || 'Falha ao abrir sessão.');
+        console.error(`Erro [Service] ao buscar forma pagto ID ${id}:`, error);
+        throw new Error(error.response?.data?.message || `Falha ao buscar forma de pagamento ${id}.`);
     }
 };
 
-const getLastOpenSession = async (): Promise<Session | null> => {
+const createPaymentMethod = async (methodData: CreatePaymentMethodPayload): Promise<PaymentMethod> => {
     try {
-        const { data } = await api.get<LastOpenApiResponse>('/sessions/last-open');
-        return data.session;
+        const { data } = await api.post<ApiResponse>('/payment-methods', methodData);
+        return data.paymentMethod;
     } catch (error: any) {
-        if (error.response?.status === 404) {
-            return null;
-        }
-        console.error('Erro [Service] ao buscar última sessão aberta:', error);
-        throw new Error(error.response?.data?.message || 'Falha ao buscar status do caixa.');
+        console.error('Erro [Service] ao criar forma pagto:', error);
+        throw new Error(error.response?.data?.message || 'Falha ao criar forma de pagamento.');
     }
 };
 
-const closeSession = async (sessionId: number, payload: CloseSessionPayload): Promise<Session> => {
+const updatePaymentMethod = async (id: number, methodData: UpdatePaymentMethodPayload): Promise<PaymentMethod> => {
      try {
-        const { data } = await api.post<SessionApiResponse>(`/sessions/${sessionId}/close`, payload);
-        return data.session;
+        if (Object.keys(methodData).length === 0) throw new Error("Nenhum dado para atualizar.");
+        const { data } = await api.put<ApiResponse>(`/payment-methods/${id}`, methodData);
+        return data.paymentMethod;
     } catch (error: any) {
-        console.error(`Erro [Service] ao fechar sessão ID ${sessionId}:`, error);
-        throw new Error(error.response?.data?.message || 'Falha ao fechar sessão.');
+        console.error(`Erro [Service] ao atualizar forma pagto ${id}:`, error);
+        throw new Error(error.response?.data?.message || `Falha ao atualizar forma de pagamento ${id}.`);
     }
 };
 
-export const sessionService = {
-    getLastOpenSession,
-    openSession,
-    closeSession,
+const deletePaymentMethod = async (id: number): Promise<{ message: string }> => {
+     try {
+        const { data } = await api.delete<{ message: string }>(`/payment-methods/${id}`);
+        return data || { message: 'Forma de pagamento excluída.' };
+    } catch (error: any) {
+        console.error(`Erro [Service] ao deletar forma pagto ${id}:`, error);
+        throw new Error(error.response?.data?.message || `Falha ao deletar forma de pagamento ${id}.`);
+    }
+};
+
+export const paymentMethodService = {
+  getAllPaymentMethods,
+  getPaymentMethodById,
+  createPaymentMethod,
+  updatePaymentMethod,
+  deletePaymentMethod,
 };
