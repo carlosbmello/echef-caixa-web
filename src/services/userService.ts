@@ -1,3 +1,4 @@
+// src/services/userService.ts
 import api from './api';
 
 interface User {
@@ -7,20 +8,18 @@ interface User {
   role: string;
 }
 
-interface UserResponse {
-  data: User;
-}
+// Não precisamos de uma interface 'UserResponse', podemos usar 'User' diretamente
+// se a API retornar o objeto do usuário diretamente.
 
 export const userService = {
-  getUser: async (id: number): Promise<UserResponse> => {
-    const response = await api.get(`/users/${id}`);
-    return response;
+  getUser: async (id: number): Promise<User> => {
+    // A chamada à API retorna um objeto. Extraímos a propriedade 'data' dele.
+    const { data } = await api.get<User>(`/users/${id}`);
+    return data;
   },
 
-  getCurrentUser: async (): Promise<UserResponse> => {
-    const response = await api.get('/users/me');
-    return response;
+  getCurrentUser: async (): Promise<User> => {
+    const { data } = await api.get<User>('/users/me');
+    return data;
   },
-
-  // Add other user-related methods as needed
 };

@@ -1,11 +1,6 @@
 // src/services/authService.ts
 import axios from 'axios';
-
-// const API_URL = 'http://localhost:3001/api/auth'; // Ajuste se necessário
-// A URL base viria da variável de ambiente
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3010/api'; // Fallback opcional
-
-const API_URL = `${API_BASE_URL}/auth`; // Constrói a URL específica
+import api from './api'; // Importamos 'api' para pegar a baseURL
 
 interface LoginCredentials { email: string; senha: string; }
 
@@ -15,7 +10,8 @@ interface LoginResponse { message: string; token: string; user: UserData; }
 
 const login = async (credentials: LoginCredentials): Promise<LoginResponse> => {
   try {
-    const response = await axios.post<LoginResponse>(`${API_URL}/login`, credentials);
+    // Usamos o axios diretamente, mas pegamos a baseURL da nossa instância 'api'
+    const response = await axios.post<LoginResponse>(`${api.defaults.baseURL}/auth/login`, credentials);
     return response.data;
   } catch (error) {
     console.error('Erro no serviço de login:', error);
