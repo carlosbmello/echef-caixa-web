@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build --mode production",
+     "build": "VITE_API_BASE_URL=https://api.neverlandbar.com.br/api tsc -b && vite build --mode production",
     "lint": "eslint .",
     "preview": "vite preview"
   },
