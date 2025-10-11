@@ -286,12 +286,17 @@ const CashierMainPage: React.FC = () => {
     const PONTO_ID_CAIXA = 3;
 
     try {
-        // Recalcula todos os valores finais como NÚMEROS puros
-        const consumoFinal = groupTotalConsumo;
-        const acrescimosFinal = groupAcrescimosCents / 100;
-        const descontosFinal = groupDescontosCents / 100;
-        const taxaFinal = incluirTaxa ? consumoFinal * 0.10 : 0;
-        const totalFinal = consumoFinal + taxaFinal + acrescimosFinal - descontosFinal;
+        // --- LÓGICA DE CÁLCULO FINAL E SEGURA ---
+        // Garante que todos os valores estejam na unidade correta (Reais) antes de montar o payload.
+        
+        const consumoFinal = groupTotalConsumo;          // Ex: 283
+        const acrescimosFinal = groupAcrescimosCents / 100; // Ex: 0
+        const descontosFinal = groupDescontosCents / 100;   // Ex: 0
+        
+        // Garante que a taxa seja calculada sobre o valor em Reais
+        const taxaFinal = incluirTaxa ? consumoFinal * 0.10 : 0; // Ex: 283 * 0.10 = 28.3
+        
+        const totalFinal = consumoFinal + taxaFinal + acrescimosFinal - descontosFinal; // Ex: 283 + 28.3 = 311.3
 
         const jobData = {
             cabecalho: {
@@ -306,12 +311,12 @@ const CashierMainPage: React.FC = () => {
                     .map(item => ({
                         quantidade: `${formatQuantity(Number(item.quantidade || 0))}x`,
                         nome: item.produto_nome,
-                        // Passando o valor NUMÉRICO do subtotal do item
+                        // Passa o valor NUMÉRICO do subtotal
                         valor: (Number(item.quantidade || 0) * Number(item.preco_unitario_momento || 0))
                     }))
             })),
             resumoTransacao: {
-                // Todos os valores no payload são NÚMEROS PUROS
+                // Todos os valores são passados como NÚMEROS PUROS
                 totalConsumo: { descricao: "Total Consumo", valor: consumoFinal },
                 taxaServico: { descricao: "(+) Taxa de Serviço (10%)", valor: taxaFinal },
                 acrescimos: { descricao: "(+) Acréscimos", valor: acrescimosFinal },
@@ -320,7 +325,7 @@ const CashierMainPage: React.FC = () => {
             }
         };
 
-        // Envia o jobData com números para a API
+        // Envia o jobData com números puros para a API
         await printService.imprimirPorPonto(PONTO_ID_CAIXA, jobData, 'clienteConta');
         toast.success("Impressão de conferência enviada!");
 
@@ -348,7 +353,26 @@ const CashierMainPage: React.FC = () => {
 
     useEffect(() => { if (!initialFetchDoneRef.current) { fetchInitialData(); fetchOpenComandas(); initialFetchDoneRef.current = true; } }, [fetchInitialData, fetchOpenComandas]);
     useEffect(() => { if (viewMode === 'monitor') { fetchOpenComandas(); } else if (viewMode === 'fechamento' && selectedComandas.length > 0) { setGroupAcrescimosCents(0); setGroupDescontosCents(0); setGroupPaymentsList([]); fetchComandaDetails(selectedComandas); } else if (viewMode === 'fechamento' && selectedComandas.length === 0) { fetchComandaDetails([]); } }, [viewMode, selectedComandas, fetchComandaDetails, fetchOpenComandas]);
-    useEffect(() => { if (viewMode === 'fechamento') { const totalPagoCalculado = groupPaymentsList.reduce((s, p) => s + Number(p.valor || 0), 0); setGroupTotalPago(totalPagoCalculado); const acrescimos = groupAcrescimosCents / 100; const descontos = groupDescontosCents / 100; const taxa = incluirTaxa ? groupTotalConsumo * 0.10 : 0; const totalAPagar = groupTotalConsumo + taxa + acrescimos - descontos; const saldoDevedor = totalAPagar - totalPagoCalculado; setGroupTaxaServico(taxa); setGroupTotalAPagar(totalAPagar); setGroupSaldoDevedor(Math.abs(saldoDevedor) < 0.001 ? 0 : saldoDevedor); } }, [viewMode, groupTotalConsumo, groupPaymentsList, incluirTaxa, groupAcrescimosCents, groupDescontosCents]);
+    useEffect(() => {
+    if (viewMode === 'fechamento') {
+        const totalPagoCalculado = groupPaymentsList.reduce((s, p) => s + Number(p.valor || 0), 0);
+        setGroupTotalPago(totalPagoCalculado);
+
+        const acrescimos = groupAcrescimosCents / 100;
+        const descontos = groupDescontosCents / 100;
+        
+        // --- CÁLCULO CORRIGIDO DA TAXA ---
+        // Agora, garantimos que o cálculo seja feito sobre o valor em Reais.
+        const taxa = incluirTaxa ? groupTotalConsumo * 0.10 : 0; 
+        
+        const totalAPagar = groupTotalConsumo + taxa + acrescimos - descontos;
+        const saldoDevedor = totalAPagar - totalPagoCalculado;
+
+        setGroupTaxaServico(taxa); // Armazena a taxa em Reais (ex: 28.3)
+        setGroupTotalAPagar(totalAPagar);
+        setGroupSaldoDevedor(Math.abs(saldoDevedor) < 0.001 ? 0 : saldoDevedor);
+    }
+}, [viewMode, groupTotalConsumo, groupPaymentsList, incluirTaxa, groupAcrescimosCents, groupDescontosCents]);
     useEffect(() => { if (addComandaInputRef.current) { setTimeout(() => { addComandaInputRef.current?.focus(); }, 100); } }, [viewMode]);
     useEffect(() => { const root = window.document.documentElement; const oldTheme = isDarkMode ? 'light' : 'dark'; root.classList.remove(oldTheme); root.classList.add(isDarkMode ? 'dark' : 'light'); localStorage.setItem('theme', isDarkMode ? 'dark' : 'light'); }, [isDarkMode]);
     useEffect(() => { document.title = 'Gerenciar Caixa - eChef Admin'; return () => { document.title = 'eChef Admin'; }; }, []);
