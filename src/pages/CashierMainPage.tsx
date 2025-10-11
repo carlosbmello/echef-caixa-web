@@ -283,9 +283,16 @@ const CashierMainPage: React.FC = () => {
     if (!selectedComandas.length || isPrinting) return;
     setIsPrinting(true);
     setComandaError(null);
-    const PONTO_ID_CAIXA = 3; 
+    const PONTO_ID_CAIXA = 3;
 
     try {
+        // Recalcula todos os valores finais como NÚMEROS puros
+        const consumoFinal = groupTotalConsumo;
+        const acrescimosFinal = groupAcrescimosCents / 100;
+        const descontosFinal = groupDescontosCents / 100;
+        const taxaFinal = incluirTaxa ? consumoFinal * 0.10 : 0;
+        const totalFinal = consumoFinal + taxaFinal + acrescimosFinal - descontosFinal;
+
         const jobData = {
             cabecalho: {
                 linha1: "NEVERLAND BAR",
@@ -299,20 +306,21 @@ const CashierMainPage: React.FC = () => {
                     .map(item => ({
                         quantidade: `${formatQuantity(Number(item.quantidade || 0))}x`,
                         nome: item.produto_nome,
-                        // --- CORREÇÃO AQUI: Passa o valor NUMÉRICO ---
+                        // Passando o valor NUMÉRICO do subtotal do item
                         valor: (Number(item.quantidade || 0) * Number(item.preco_unitario_momento || 0))
                     }))
             })),
             resumoTransacao: {
-                // --- CORREÇÃO PRINCIPAL: PASSE OS NÚMEROS PUROS ---
-                totalConsumo: { descricao: "Total Consumo", valor: groupTotalConsumo },
-                taxaServico: { descricao: "(+) Taxa de Serviço (10%)", valor: groupTaxaServico },
-                acrescimos: { descricao: "(+) Acréscimos", valor: groupAcrescimosCents / 100 },
-                descontos: { descricao: "(-) Descontos", valor: groupDescontosCents / 100 },
-                totalConta: { descricao: "Total da Conta", valor: groupTotalAPagar }
+                // Todos os valores no payload são NÚMEROS PUROS
+                totalConsumo: { descricao: "Total Consumo", valor: consumoFinal },
+                taxaServico: { descricao: "(+) Taxa de Serviço (10%)", valor: taxaFinal },
+                acrescimos: { descricao: "(+) Acréscimos", valor: acrescimosFinal },
+                descontos: { descricao: "(-) Descontos", valor: descontosFinal },
+                totalConta: { descricao: "Total da Conta", valor: totalFinal }
             }
         };
 
+        // Envia o jobData com números para a API
         await printService.imprimirPorPonto(PONTO_ID_CAIXA, jobData, 'clienteConta');
         toast.success("Impressão de conferência enviada!");
 
