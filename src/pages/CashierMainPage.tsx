@@ -283,16 +283,14 @@ const CashierMainPage: React.FC = () => {
     if (!selectedComandas.length || isPrinting) return;
     setIsPrinting(true);
     setComandaError(null);
-    const PONTO_ID_CAIXA = 3;
+    const PONTO_ID_CAIXA = 3; // Ponto de impressão do caixa
 
     try {
-        // --- CÁLCULO CORRETO DA TAXA ---
-        // Recalcula a taxa aqui para garantir que está correta, dividindo por 100 se necessário.
-        // Assumindo que groupTotalConsumo e groupTaxaServico estão em Reais, não em centavos.
-        // Se a taxa está errada, o problema é no useEffect que a calcula.
-
         const jobData = {
-            cabecalho: { linha1: "NEVERLAND BAR", linha2: "Sua casa de espetaculos" },
+            cabecalho: {
+                linha1: "NEVERLAND BAR",
+                linha2: "Sua casa de espetaculos"
+            },
             comandas: selectedComandas.map(comanda => ({
                 numero: comanda.numero,
                 clienteNome: comanda.cliente_nome,
@@ -301,13 +299,15 @@ const CashierMainPage: React.FC = () => {
                     .map(item => ({
                         quantidade: `${formatQuantity(Number(item.quantidade || 0))}x`,
                         nome: item.produto_nome,
-                        valor: (Number(item.quantidade || 0) * Number(item.preco_unitario_momento || 0)) // Passa o número, não a string formatada
+                        // Passando o valor NUMÉRICO do subtotal do item
+                        valor: (Number(item.quantidade || 0) * Number(item.preco_unitario_momento || 0))
                     }))
             })),
             resumoTransacao: {
-                consumo: { descricao: "Total Consumo", valor: groupTotalConsumo },
-                // <<< CORREÇÃO PRINCIPAL AQUI >>>
-                // Garanta que todos os valores enviados para o printer são NÚMEROS
+                // --- CORREÇÃO APLICADA AQUI ---
+                // Todos os valores são passados como NÚMEROS puros.
+                // A formatação (R$, vírgula) será feita no printer.js
+                totalConsumo: { descricao: "Total Consumo", valor: groupTotalConsumo }, // Enviando como objeto, não array
                 taxaServico: { descricao: "(+) Taxa de Serviço (10%)", valor: groupTaxaServico },
                 acrescimos: { descricao: "(+) Acréscimos", valor: groupAcrescimosCents / 100 },
                 descontos: { descricao: "(-) Descontos", valor: groupDescontosCents / 100 },
@@ -317,6 +317,7 @@ const CashierMainPage: React.FC = () => {
 
         await printService.imprimirPorPonto(PONTO_ID_CAIXA, jobData, 'clienteConta');
         toast.success("Impressão de conferência enviada!");
+
     } catch (err: any) {
         setComandaError(err.message);
         toast.error(err.message);
