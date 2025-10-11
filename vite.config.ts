@@ -17,7 +17,7 @@ export default defineConfig(({ mode }) => {
   const httpsConfig = env.USE_HTTPS === 'true' 
     ? {
         key: fs.readFileSync(path.resolve(__dirname, '../certs/localhost+3-key.pem')),
-        cert: fs.readFileSync(path.resolve(__dirname, '../certs/localhost+3-pem')),
+        cert: fs.readFileSync(path.resolve(__dirname, '../certs/localhost+3.pem')),
       }
     : undefined; // Se não, a configuração https será indefinida, desativando-a.
 
