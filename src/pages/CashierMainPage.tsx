@@ -283,7 +283,7 @@ const CashierMainPage: React.FC = () => {
     if (!selectedComandas.length || isPrinting) return;
     setIsPrinting(true);
     setComandaError(null);
-    const PONTO_ID_CAIXA = 3; // Ponto de impressão do caixa
+    const PONTO_ID_CAIXA = 3; 
 
     try {
         const jobData = {
@@ -299,15 +299,13 @@ const CashierMainPage: React.FC = () => {
                     .map(item => ({
                         quantidade: `${formatQuantity(Number(item.quantidade || 0))}x`,
                         nome: item.produto_nome,
-                        // Passando o valor NUMÉRICO do subtotal do item
+                        // --- CORREÇÃO AQUI: Passa o valor NUMÉRICO ---
                         valor: (Number(item.quantidade || 0) * Number(item.preco_unitario_momento || 0))
                     }))
             })),
             resumoTransacao: {
-                // --- CORREÇÃO APLICADA AQUI ---
-                // Todos os valores são passados como NÚMEROS puros.
-                // A formatação (R$, vírgula) será feita no printer.js
-                totalConsumo: { descricao: "Total Consumo", valor: groupTotalConsumo }, // Enviando como objeto, não array
+                // --- CORREÇÃO PRINCIPAL: PASSE OS NÚMEROS PUROS ---
+                totalConsumo: { descricao: "Total Consumo", valor: groupTotalConsumo },
                 taxaServico: { descricao: "(+) Taxa de Serviço (10%)", valor: groupTaxaServico },
                 acrescimos: { descricao: "(+) Acréscimos", valor: groupAcrescimosCents / 100 },
                 descontos: { descricao: "(-) Descontos", valor: groupDescontosCents / 100 },
