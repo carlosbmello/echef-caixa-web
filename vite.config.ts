@@ -23,8 +23,8 @@ export default defineConfig(({ mode }) => {
   if (env.USE_HTTPS === 'true') {
     try {
       serverConfig.https = {
-        key: fs.readFileSync(path.resolve(__dirname, '../certs/localhost+3-key.pem')),
-        cert: fs.readFileSync(path.resolve(__dirname, '../certs/localhost+3.pem')),
+        key: fs.readFileSync(path.resolve(__dirname, '../certs/local-key.pem')),
+        cert: fs.readFileSync(path.resolve(__dirname, '../certs/local-cert.pem')),
       };
     } catch (e) {
       console.error('--- ERRO DE HTTPS ---');
