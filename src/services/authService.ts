@@ -11,7 +11,7 @@ interface LoginResponse { message: string; token: string; user: UserData; }
 const login = async (credentials: LoginCredentials): Promise<LoginResponse> => {
   try {
     // Usamos o axios diretamente, mas pegamos a baseURL da nossa instância 'api'
-    const response = await axios.post<LoginResponse>(`${api.defaults.baseURL}/auth/login`, credentials);
+    const response = await axios.post<LoginResponse>(`${api.defaults.baseURL}/admin/auth/login`, credentials);
     return response.data;
   } catch (error) {
     console.error('Erro no serviço de login:', error);
