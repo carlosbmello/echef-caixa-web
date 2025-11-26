@@ -1,16 +1,17 @@
-// src/services/api.ts
+// src/services/api.ts (CORRIGIDO COM PREFIXO /admin)
 import axios from 'axios';
 
-// 1. Lê a variável de ambiente fornecida pelo Vite.
-//    Se a variável não existir (como em testes), usa localhost como fallback.
-const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3010/api';
+// 1. Lê a variável de ambiente.
+const envBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3010/api';
 
 console.log('=== API INITIALIZATION ===');
-console.log(`[API Service] A Base URL está configurada para: ${baseURL}`);
+// Adicionamos /admin aqui para facilitar a vida dos serviços
+const adminBaseUrl = `${envBaseUrl}/admin`;
+console.log(`[API Service] A Base URL está configurada para: ${adminBaseUrl}`);
 
 const api = axios.create({
-  // 2. Usa a variável 'baseURL' que acabamos de definir.
-  baseURL: baseURL,
+  // 2. Agora todas as requisições sairão como /api/admin/...
+  baseURL: adminBaseUrl,
   headers: {
     'Content-Type': 'application/json'
   },
@@ -19,7 +20,7 @@ const api = axios.create({
 
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('authToken');
-  console.log(`Buscando token com a chave 'authToken'. Encontrado: ${!!token}`);
+  // console.log(`Buscando token... Encontrado: ${!!token}`);
   
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
