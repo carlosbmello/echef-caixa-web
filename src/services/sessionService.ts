@@ -1,7 +1,7 @@
 // src/services/sessionService.ts
 import api from './api';
 
-// --- INTERFACES (permanecem as mesmas) ---
+// --- INTERFACES ---
 export interface Session {
   id: number;
   usuario_abertura_id: number;
@@ -30,22 +30,24 @@ export interface CloseSessionPayload {
     observacao_fechamento?: string | null;
 }
 
-interface SessionApiResponse {
+// Interfaces de resposta alinhadas com o Backend atual
+interface OpenSessionResponse {
     message: string;
-    session: Session;
+    sessionId: number;
 }
 
-interface LastOpenApiResponse {
-    message?: string;
-    session: Session | null;
+interface CloseSessionResponse {
+    message: string;
+    resumo: any; // O backend retorna um resumo financeiro aqui
 }
 
-// --- Funções do Serviço (Refatoradas) ---
+// --- Funções do Serviço (Corrigidas) ---
 
-const openSession = async (payload: CreateSessionPayload): Promise<Session> => {
+const openSession = async (payload: CreateSessionPayload): Promise<OpenSessionResponse> => {
     try {
-        const { data } = await api.post<SessionApiResponse>('/sessions/open', payload);
-        return data.session;
+        // Backend retorna { message, sessionId }
+        const response = await api.post<OpenSessionResponse>('/sessions/open', payload);
+        return response.data;
     } catch (error: any) {
         console.error('Erro [Service] ao abrir sessão:', error);
         throw new Error(error.response?.data?.message || 'Falha ao abrir sessão.');
@@ -54,9 +56,18 @@ const openSession = async (payload: CreateSessionPayload): Promise<Session> => {
 
 const getLastOpenSession = async (): Promise<Session | null> => {
     try {
-        const { data } = await api.get<LastOpenApiResponse>('/sessions/last-open');
-        return data.session;
+        // [CORREÇÃO CRÍTICA]: O Backend retorna o objeto Session DIRETAMENTE ou null.
+        // Não existe wrapper { session: ... }
+        const response = await api.get<Session | null>('/sessions/last-open');
+        
+        // Se o body for vazio ou null, significa que não tem sessão
+        if (!response.data) {
+            return null;
+        }
+
+        return response.data;
     } catch (error: any) {
+        // Se o backend retornar 404, tratamos como "sem sessão"
         if (error.response?.status === 404) {
             return null;
         }
@@ -65,10 +76,11 @@ const getLastOpenSession = async (): Promise<Session | null> => {
     }
 };
 
-const closeSession = async (sessionId: number, payload: CloseSessionPayload): Promise<Session> => {
+const closeSession = async (sessionId: number, payload: CloseSessionPayload): Promise<CloseSessionResponse> => {
      try {
-        const { data } = await api.post<SessionApiResponse>(`/sessions/${sessionId}/close`, payload);
-        return data.session;
+        // [CORREÇÃO DE ROTA]: No backend a rota é /sessions/close/:id
+        const response = await api.post<CloseSessionResponse>(`/sessions/close/${sessionId}`, payload);
+        return response.data;
     } catch (error: any) {
         console.error(`Erro [Service] ao fechar sessão ID ${sessionId}:`, error);
         throw new Error(error.response?.data?.message || 'Falha ao fechar sessão.');
