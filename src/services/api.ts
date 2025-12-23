@@ -1,4 +1,4 @@
-// src/services/api.ts (CORRIGIDO COM PREFIXO /admin)
+// src/services/api.ts (VERSÃO FINAL COM INTERCEPTOR 401 ROBUSTO)
 import axios from 'axios';
 
 // 1. Lê a variável de ambiente.
@@ -10,7 +10,6 @@ const adminBaseUrl = `${envBaseUrl}/admin`;
 console.log(`[API Service] A Base URL está configurada para: ${adminBaseUrl}`);
 
 const api = axios.create({
-  // 2. Agora todas as requisições sairão como /api/admin/...
   baseURL: adminBaseUrl,
   headers: {
     'Content-Type': 'application/json'
@@ -18,9 +17,10 @@ const api = axios.create({
   timeout: 10000
 });
 
+// --- 1. INTERCEPTOR DE REQUISIÇÃO ---
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('authToken');
-  // console.log(`Buscando token... Encontrado: ${!!token}`);
+  // Tenta pegar o token com os nomes mais comuns que você usou no projeto
+  const token = localStorage.getItem('echef-token') || localStorage.getItem('authToken');
   
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
@@ -31,18 +31,30 @@ api.interceptors.request.use((config) => {
   return Promise.reject(error);
 });
 
+// --- 2. INTERCEPTOR DE RESPOSTA (Trata o Erro 401) ---
 api.interceptors.response.use(
   (response) => {
     return response;
   },
   (error) => {
-    console.error('Response Interceptor Error:', error.message);
-    if (error.response?.status === 401) {
-      console.warn('Authentication failed - redirecting to login');
+    // Verifica se é erro de autenticação (401 - Token inválido/expirado)
+    if (error.response && error.response.status === 401) {
+      console.warn('[API] Sessão expirada ou token inválido no Caixa. Redirecionando...');
+
+      // 1. Limpa TODOS os possíveis dados de sessão para garantir
+      // Isso cobre tanto o padrão novo ('echef-token') quanto o antigo ('authToken')
+      localStorage.removeItem('echef-token');
       localStorage.removeItem('authToken');
+      localStorage.removeItem('echef-user');
       localStorage.removeItem('userData');
-      window.location.href = '/login';
+
+      // 2. Redireciona para o login se já não estiver lá
+      if (!window.location.pathname.includes('/login')) {
+          window.location.href = '/login';
+      }
     }
+    
+    // Retorna o erro para casos que não são 401 (ex: 404, 500)
     return Promise.reject(error);
   }
 );
