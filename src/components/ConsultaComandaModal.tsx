@@ -89,73 +89,82 @@ const ConsultaComandaModal: React.FC<ConsultaComandaModalProps> = ({ isOpen, onC
 
     // Adicione esta nova função dentro do componente
 const handleReimprimirRecibo = async () => {
-    if (!detalheConsulta || isPrinting) return;
-    setIsPrinting(true);
-    setError(null);
+        if (!detalheConsulta || isPrinting) return;
+        setIsPrinting(true);
+        setError(null);
 
-    const PONTO_ID_CAIXA = 3; // ID da impressora do Caixa
+        const PONTO_ID_CAIXA = 3; 
 
-    try {
-        // 1. Montar o jobData com a estrutura 'clientePagtos'
-        const jobData = {
-            cabecalho: {
-                linha1: "NEVERLAND BAR",
-                linha2: "Sua casa de espetaculos"
-            },
-            comandas: detalheConsulta.comandas.map((comanda: any) => ({
-                numero: comanda.numero,
-                clienteNome: comanda.cliente_nome,
-                itens: comanda.itens?.map((item: any) => ({
-                    quantidade: `${formatQuantity(Number(item.quantidade || 0))}x`,
-                    nome: item.produto_nome,
-                    valor: formatCurrency(Number(item.quantidade || 0) * Number(item.preco_unitario_momento || 0))
-                })) || []
-            })),
-            resumoTransacao: {
-                consumo: detalheConsulta.lancamentos
-                    .filter(l => l.tipo_lancamento === 'consumo')
-                    .map(l => ({ descricao: l.descricao, valor: formatCurrency(Number(l.valor)) })),
-                taxaServico: {
-                    descricao: "(+) Taxa de Serviço (10%)",
-                    valor: formatCurrency(detalheConsulta.lancamentos.find(l => l.tipo_lancamento === 'taxa_servico')?.valor || 0)
+        try {
+            // Cálculo do total da conta para enviar limpo
+            const totalContaCalculado = detalheConsulta.lancamentos?.reduce((total, l) => {
+                if (l.tipo_lancamento === 'desconto') return total - Number(l.valor);
+                if (l.tipo_lancamento !== 'pagamento') return total + Number(l.valor);
+                return total;
+            }, 0) || 0;
+
+            const totalPagoCalculado = detalheConsulta.pagamentos?.reduce((sum: number, p: any) => sum + Number(p.valor), 0) || 0;
+
+            // 1. Montar o jobData enviando NÚMEROS (Raw Numbers)
+            // O print-bridge se encarrega de colocar o "R$" e a vírgula.
+            const jobData = {
+                cabecalho: {
+                    linha1: "NEVERLAND BAR",
+                    linha2: "Sua casa de espetaculos"
                 },
-                acrescimos: {
-                    descricao: "(+) Acréscimos",
-                    valor: formatCurrency(detalheConsulta.lancamentos.find(l => l.tipo_lancamento === 'acrescimo')?.valor || 0)
+                comandas: detalheConsulta.comandas.map((comanda: any) => ({
+                    numero: comanda.numero,
+                    clienteNome: comanda.cliente_nome,
+                    itens: comanda.itens?.map((item: any) => ({
+                        quantidade: `${formatQuantity(Number(item.quantidade || 0))}x`,
+                        nome: item.produto_nome,
+                        // [CORREÇÃO] Envia número, não string formatada
+                        valor: Number(item.quantidade || 0) * Number(item.preco_unitario_momento || 0)
+                    })) || []
+                })),
+                resumoTransacao: {
+                    consumo: detalheConsulta.lancamentos
+                        .filter(l => l.tipo_lancamento === 'consumo')
+                        .map(l => ({ 
+                            descricao: l.descricao, 
+                            valor: Number(l.valor) // [CORREÇÃO] Número puro
+                        })),
+                    taxaServico: {
+                        descricao: "(+) Taxa de Serviço (10%)",
+                        valor: Number(detalheConsulta.lancamentos.find(l => l.tipo_lancamento === 'taxa_servico')?.valor || 0)
+                    },
+                    acrescimos: {
+                        descricao: "(+) Acréscimos",
+                        valor: Number(detalheConsulta.lancamentos.find(l => l.tipo_lancamento === 'acrescimo')?.valor || 0)
+                    },
+                    descontos: {
+                        descricao: "(-) Descontos",
+                        valor: Number(detalheConsulta.lancamentos.find(l => l.tipo_lancamento === 'desconto')?.valor || 0)
+                    },
+                    totalConta: {
+                        descricao: "Total da Conta",
+                        valor: Number(totalContaCalculado)
+                    }
                 },
-                descontos: {
-                    descricao: "(-) Descontos",
-                    valor: formatCurrency(detalheConsulta.lancamentos.find(l => l.tipo_lancamento === 'desconto')?.valor || 0)
-                },
-                totalConta: {
-                    descricao: "Total da Conta",
-                    valor: formatCurrency(detalheConsulta.lancamentos?.reduce((total, l) => {
-                        if (l.tipo_lancamento === 'desconto') return total - Number(l.valor);
-                        if (l.tipo_lancamento !== 'pagamento') return total + Number(l.valor);
-                        return total;
-                    }, 0) || 0)
-                }
-            },
-            pagamentos: detalheConsulta.pagamentos.map((p: any) => ({
-                metodo: p.nome_forma_pagamento,
-                data: formatDateTime(p.data_hora),
-                valor: formatCurrency(Number(p.valor))
-            })),
-            totalPago: formatCurrency(detalheConsulta.pagamentos?.reduce((sum: number, p: any) => sum + Number(p.valor), 0) || 0)
-        };
+                pagamentos: detalheConsulta.pagamentos.map((p: any) => ({
+                    metodo: p.nome_forma_pagamento,
+                    data: formatDateTime(p.data_hora),
+                    valor: Number(p.valor) // [CORREÇÃO] Número puro
+                })),
+                totalPago: Number(totalPagoCalculado)
+            };
 
-        // 2. Chamar o serviço de impressão
-        await printService.imprimirPorPonto(PONTO_ID_CAIXA, jobData, 'clientePagtos');
+            await printService.imprimirPorPonto(PONTO_ID_CAIXA, jobData, 'clientePagtos');
 
-        toast.success("Recibo enviado para a fila de impressão!");
+            toast.success("Recibo enviado para a fila de impressão!");
 
-    } catch (err: any) {
-        setError(err.message);
-        toast.error(err.message);
-    } finally {
-        setIsPrinting(false);
-    }
-};
+        } catch (err: any) {
+            setError(err.message);
+            toast.error(err.message);
+        } finally {
+            setIsPrinting(false);
+        }
+    };
     if (!isOpen) return null;
 
     return (
