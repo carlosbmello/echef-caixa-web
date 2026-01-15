@@ -42,22 +42,76 @@ const CashierHeader: React.FC<{ user: any; onLogout: () => void; onToggleDark: (
     </header>
 );
 
-const SessionStatus: React.FC<{ openSession: Session | null | undefined; isLoading: boolean; error: string | null; onOpen: () => void; onClose: () => void; onMove: () => void; isAllowed: boolean }> = ({ openSession, isLoading, error, onOpen, onClose, onMove, isAllowed }) => (
-    <div className={`p-4 bg-white dark:bg-gray-900 rounded-lg shadow border-l-4 ${openSession ? 'border-green-500 dark:border-green-400' : 'border-red-500 dark:border-red-400'}`}>
-        <div className="flex flex-wrap items-center justify-between gap-y-3">
-            <h2 className="text-lg font-semibold text-gray-700 dark:text-gray-200 w-full">Status do Caixa</h2>
-            <div className='flex-grow text-sm text-gray-600 dark:text-gray-300 flex flex-wrap items-center gap-x-4 gap-y-1'>
-                {isLoading && openSession === undefined ? ( <p className='italic text-gray-500 dark:text-gray-400'>Verificando...</p> ) : error && !openSession ? ( <p className="text-red-600">{error}</p> ) : openSession ? (
+// Componente de Status Compacto (Uma única linha)
+const SessionStatus: React.FC<{ 
+    openSession: Session | null | undefined; 
+    isLoading: boolean; 
+    error: string | null; 
+    onOpen: () => void; 
+    onClose: () => void; 
+    onMove: () => void; 
+    onConsult: () => void; // [NOVO] Recebe a função de consultar
+    isAllowed: boolean 
+}> = ({ openSession, isLoading, error, onOpen, onClose, onMove, onConsult, isAllowed }) => (
+    <div className={`px-4 py-2 bg-white dark:bg-gray-900 rounded-lg shadow border-l-4 ${openSession ? 'border-green-500' : 'border-red-500'} mb-4 transition-all`}>
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+            
+            {/* LADO ESQUERDO: Informações em linha */}
+            <div className='flex-grow text-sm text-gray-700 dark:text-gray-200 flex flex-wrap items-center gap-x-4'>
+                {isLoading && openSession === undefined ? (
+                    <span className='italic text-gray-500'>Verificando status...</span>
+                ) : error && !openSession ? (
+                    <span className="text-red-600 font-bold">{error}</span>
+                ) : openSession ? (
                     <>
-                        <p><strong>Status:</strong> <span className="text-green-700 dark:text-green-400 font-medium">Aberto</span> (ID: {openSession.id})</p>
-                        <p><strong>Operador:</strong> {openSession.nome_usuario_abertura || '?'}</p>
-                        <p><strong>Abertura:</strong> {formatDateTime(openSession.data_abertura)}</p>
-                        <p><strong>Valor Inicial:</strong> {formatCurrency(Number(openSession.valor_abertura))}</p>
+                        <div className="flex items-center gap-2">
+                            <span className="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse"></span>
+                            <span className="font-bold text-green-700 dark:text-green-400 uppercase">Aberto</span>
+                            <span className="text-xs text-gray-400">#{openSession.id}</span>
+                        </div>
+                        <span className="hidden sm:inline text-gray-300">|</span>
+                        <span>Op: <strong>{openSession.nome_usuario_abertura}</strong></span>
+                        <span className="hidden sm:inline text-gray-300">|</span>
+                        <span>{formatDateTime(openSession.data_abertura)}</span>
+                        <span className="hidden sm:inline text-gray-300">|</span>
+                        <span>Ini: <strong>{formatCurrency(Number(openSession.valor_abertura))}</strong></span>
                     </>
-                ) : ( <p className="text-gray-600 dark:text-gray-400">Caixa Fechado</p> )}
+                ) : (
+                    <div className="flex items-center gap-2">
+                        <span className="w-2.5 h-2.5 rounded-full bg-red-500"></span>
+                        <span className="font-bold text-gray-500 uppercase">Caixa Fechado</span>
+                    </div>
+                )}
             </div>
+
+            {/* LADO DIREITO: Botões de Ação na mesma linha */}
             <div className="flex gap-2 flex-shrink-0">
-                {!isLoading && isAllowed && ( <> {openSession ? ( <> <button onClick={onMove} className="px-3 py-1.5 bg-yellow-500 text-white rounded text-xs shadow hover:bg-yellow-600">Movimentação</button> <button onClick={onClose} className="px-3 py-1.5 bg-red-600 text-white rounded text-xs shadow hover:bg-red-700">Fechar Caixa</button> </> ) : ( !error && <button onClick={onOpen} className="px-3 py-1.5 bg-green-600 text-white rounded text-xs shadow hover:bg-green-700">Abrir Caixa</button> )} </> )}
+                {!isLoading && isAllowed && (
+                    <>
+                        {openSession ? (
+                            <>
+                                {/* Botão Consultar trazido para cá */}
+                                <button onClick={onConsult} className="px-3 py-1 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded text-xs font-semibold hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors border border-gray-300 dark:border-gray-600">
+                                    Consultar
+                                </button>
+                                
+                                <button onClick={onMove} className="px-3 py-1 bg-yellow-500 text-white rounded text-xs font-semibold shadow-sm hover:bg-yellow-600 transition-colors">
+                                    Movimentação
+                                </button>
+                                
+                                <button onClick={onClose} className="px-3 py-1 bg-red-600 text-white rounded text-xs font-semibold shadow-sm hover:bg-red-700 transition-colors">
+                                    Fechar Caixa
+                                </button>
+                            </>
+                        ) : (
+                            !error && (
+                                <button onClick={onOpen} className="px-4 py-1.5 bg-green-600 text-white rounded text-sm font-bold shadow hover:bg-green-700 transition-colors">
+                                    Abrir Caixa
+                                </button>
+                            )
+                        )}
+                    </>
+                )}
             </div>
         </div>
     </div>
@@ -383,8 +437,7 @@ const CashierMainPage: React.FC = () => {
         <div className="flex flex-col h-screen bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200">
             <CashierHeader user={user} onLogout={handleLogout} onToggleDark={toggleDarkMode} isDark={isDarkMode} />
             <main className="flex-1 p-4 sm:p-6 overflow-y-auto space-y-6">
-                <SessionStatus openSession={openSession} isLoading={isLoadingSession} error={error} onOpen={handleShowOpenModal} onClose={handleShowCloseModal} onMove={handleShowMovementModal} isAllowed={isCashierAllowed} />
-                {openSession && ( <div className="p-3 bg-white dark:bg-gray-900 rounded-lg shadow flex justify-end gap-2"> <button onClick={() => setShowConsultaModal(true)} className='px-4 py-2 text-sm border rounded bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600'>Consultar Comanda Fechada</button> </div> )}
+                <SessionStatus openSession={openSession} isLoading={isLoadingSession} error={error} onOpen={handleShowOpenModal} onClose={handleShowCloseModal} onMove={handleShowMovementModal} onConsult={() => setShowConsultaModal(true)} isAllowed={isCashierAllowed} />
                 {!openSession && !isLoadingSession && ( <div className="text-center p-8 bg-white dark:bg-gray-900 rounded-lg shadow mt-6"><h2 className="text-xl font-bold text-gray-700 dark:text-gray-200">Caixa Fechado</h2><p className="text-gray-500 dark:text-gray-400 mt-2">Abra o caixa para iniciar as operações.</p></div> )}
                 {openSession && viewMode === 'monitor' && ( <div className="grid grid-cols-1 lg:grid-cols-2 gap-6"> <MonitorView comandasList={openComandasList} isLoading={isLoadingMonitor} error={monitorError} onFetch={fetchOpenComandas} onComandaClick={handleAddComandaPorClique} /> <div className="bg-white dark:bg-gray-900 p-4 sm:p-6 rounded-lg shadow"> <h2 className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-4">Comandas para Fechamento</h2> <form onSubmit={handleAddComanda} className="flex items-center gap-2 mb-4"> <input type="text" ref={addComandaInputRef} value={searchInputValue} onChange={(e) => setSearchInputValue(e.target.value)} disabled={isLoadingComanda} placeholder="Adicionar por Número" className="w-full border rounded px-2 py-1.5 text-sm bg-gray-50 dark:bg-gray-800 border-gray-300 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500" /> <button type="submit" disabled={isLoadingComanda || !searchInputValue.trim()} className="px-4 py-1.5 border rounded bg-blue-600 text-white text-sm disabled:opacity-50">{isLoadingComanda ? '...' : 'Add'}</button> </form> {comandaError && <p className="mb-2 text-sm text-center text-red-500 bg-red-100 dark:bg-red-900/20 p-2 rounded">{comandaError}</p>} <div className="mt-4 min-h-[200px]"> {selectedComandas.length === 0 ? ( <p className='text-center italic text-gray-500 dark:text-gray-400 pt-10'>Selecione comandas na lista à esquerda ou adicione por número.</p> ) : ( <div className="space-y-2 max-h-[40vh] overflow-y-auto pr-2"> {selectedComandas.map(com => ( <div key={com.id} className="grid grid-cols-12 gap-2 items-center p-2 border dark:border-gray-700 rounded bg-gray-50 dark:bg-gray-800 text-sm"> <div className="col-span-2 font-bold text-gray-800 dark:text-gray-100">{com.numero}</div> <div className="col-span-6 text-gray-600 dark:text-gray-300 truncate">{com.cliente_nome || '-'}</div> <div className="col-span-3 text-right font-semibold">{formatCurrency(com.total_atual_calculado)}</div> <div className="col-span-1 text-right"><button onClick={() => handleRemoveComanda(com.id)} className="text-red-500 hover:text-red-700 font-bold text-lg">×</button></div> </div> ))} </div> )} </div> {selectedComandas.length > 0 && ( <div className="mt-4 pt-4 border-t dark:border-gray-700"> <div className="text-right font-bold text-xl mb-6"><span>Total: </span><span>{formatCurrency(selectedComandas.reduce((acc, com) => acc + Number(com.total_atual_calculado || 0), 0))}</span></div> <button onClick={handleIniciarFechamento} className="w-full px-4 py-3 text-lg font-bold border rounded bg-green-600 text-white hover:bg-green-700 disabled:opacity-50 transition-all duration-300">Ir para Fechamento &rarr;</button> </div> )} </div> </div> )}
                 {viewMode === 'fechamento' && openSession && ( <div className="bg-white dark:bg-gray-900 p-4 sm:p-6 rounded-lg shadow"> <button onClick={() => { handleVoltarParaMonitor(); }} className="text-sm text-blue-600 dark:text-blue-400 hover:underline mb-4 inline-flex items-center gap-1"><FiArrowLeft size={14} /> Voltar para Seleção</button> <h2 className="text-xl font-bold mb-4 text-gray-800 dark:text-gray-200">Fechamento de Comandas</h2> {comandaError && <p className="mb-4 text-center text-red-600 bg-red-100 dark:bg-red-900/20 p-2 rounded-md text-sm">{comandaError}</p>} <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 mt-4"> <div className="lg:col-span-3 space-y-4"> <div className='p-3 border dark:border-gray-700 rounded bg-white dark:bg-gray-900'> <h4 className="text-base font-semibold mb-2 p-2 border-b dark:border-gray-700">Itens Consumidos</h4> {isLoadingItems ? (<p className='italic text-xs text-center py-4'>Buscando itens...</p>) : comandaItems.length === 0 ? (<p className='italic text-xs text-center py-4'>Nenhum item encontrado.</p>) : ( <ul className='text-xs space-y-1.5 max-h-[65vh] overflow-y-auto pr-2'>{comandaItems.sort((a,b) => (a.numero_comanda||'').localeCompare(b.numero_comanda||'') || (a.data_hora_pedido||'').localeCompare(b.data_hora_pedido||'') || a.id - b.id).map((item, index, arr) => { const q = Number(item.quantidade||0), p = Number(item.preco_unitario_momento||0), subtotal=q*p; const showComandaHeader = selectedComandas.length > 1 && (index === 0 || item.numero_comanda !== arr[index-1].numero_comanda); 
