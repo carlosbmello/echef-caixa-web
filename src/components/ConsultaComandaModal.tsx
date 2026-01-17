@@ -233,8 +233,11 @@ const handleReimprimirRecibo = async () => {
                                                 <h4 className="text-sm mt-1 font-semibold mb-1">Itens Consumidos:</h4>
                                                 <ul className='text-sm space-y-1'>
                                                     {comanda.itens?.length > 0 ? comanda.itens.map((item: any) => (
-                                                        <li key={item.id} className="flex justify-between border-b dark:border-gray-600/50 pb-1">
-                                                            <span>{item.quantidade}x {item.produto_nome}</span>
+                                                        <li key={item.id} className={`flex justify-between border-b pb-1 ${item.status_item === 'cancelado' ? 'line-through text-red-400' : ''}`}>
+    <span>
+        {item.quantidade}x {item.produto_nome}
+        {item.status_item === 'cancelado' && <span className="ml-2 text-xs no-underline font-bold">(CANCELADO)</span>}
+    </span>
                                                             <span>{formatCurrency(Number(item.quantidade) * Number(item.preco_unitario_momento))}</span>
                                                         </li>
                                                     )) : <li className="italic text-xs">Nenhum item consumido nesta comanda.</li>}

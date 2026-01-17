@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import api from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { sessionService, Session } from '../services/sessionService';
 import { comandaServiceCaixa as comandaService, Comanda } from '../services/comandaService';
@@ -13,7 +14,7 @@ import ConsultaComandaModal from '../components/ConsultaComandaModal';
 import { NumericFormat, NumberFormatValues } from 'react-number-format';
 import { toast } from 'react-toastify';
 import axios from 'axios';
-import { FiArrowLeft, FiRefreshCw, FiPrinter } from 'react-icons/fi';
+import { FiArrowLeft, FiRefreshCw, FiPrinter, FiTrash2 } from 'react-icons/fi';
 import { formatCurrency, formatDateTime, formatQuantity } from '../utils/formatters';
 
 interface ComandaComItens extends Comanda {
@@ -259,6 +260,8 @@ const CashierMainPage: React.FC = () => {
         setIsProcessingPayment(false);
     }
 };
+
+
     const handleFinalizarTransacao = async (skipConfirmation = false, pagamentosParaFinalizar?: UIPayment[]) => {
     if (!selectedComandas.length || !openSession) {
         toast.warn("Nenhuma comanda selecionada para finalizar.");
@@ -391,6 +394,36 @@ const CashierMainPage: React.FC = () => {
     }
 };
     
+    // [NOVO] Função para cancelar item com justificativa
+    const handleCancelarItem = async (itemId: number) => {
+        if (!window.confirm("Tem certeza que deseja cancelar este item?")) return;
+        
+        const motivo = prompt("Por favor, digite o motivo do cancelamento:");
+        if (!motivo || motivo.trim() === "") {
+            toast.warning("Cancelamento abortado: Motivo é obrigatório.");
+            return;
+        }
+
+        try {
+            // Chama o serviço (que precisamos garantir que exista no comandaService ou itemPedidoService)
+            // Vou assumir que você vai adicionar essa função no itemPedidoService.ts
+            // await itemPedidoService.cancelarItem(itemId, motivo);
+            
+            // OU, se preferir chamar direto via axios aqui (mais rápido pra testar agora):
+            await api.post(`/pedidos/item/${itemId}/cancelar`, { motivo });
+
+            toast.success("Item cancelado com sucesso.");
+            
+            // Recarrega os dados da comanda para atualizar os totais e remover o item da lista
+            if (selectedComandas.length > 0) {
+                fetchComandaDetails(selectedComandas);
+            }
+        } catch (err: any) {
+            console.error("Erro ao cancelar item:", err);
+            toast.error(err.response?.data?.error || "Erro ao cancelar item.");
+        }
+    };
+
     // [NOVA FUNÇÃO ADICIONADA]
     const handleValorClick = (valorEmReais: number) => {
         if (valorEmReais > 0) {
@@ -440,7 +473,11 @@ const CashierMainPage: React.FC = () => {
                 <SessionStatus openSession={openSession} isLoading={isLoadingSession} error={error} onOpen={handleShowOpenModal} onClose={handleShowCloseModal} onMove={handleShowMovementModal} onConsult={() => setShowConsultaModal(true)} isAllowed={isCashierAllowed} />
                 {!openSession && !isLoadingSession && ( <div className="text-center p-8 bg-white dark:bg-gray-900 rounded-lg shadow mt-6"><h2 className="text-xl font-bold text-gray-700 dark:text-gray-200">Caixa Fechado</h2><p className="text-gray-500 dark:text-gray-400 mt-2">Abra o caixa para iniciar as operações.</p></div> )}
                 {openSession && viewMode === 'monitor' && ( <div className="grid grid-cols-1 lg:grid-cols-2 gap-6"> <MonitorView comandasList={openComandasList} isLoading={isLoadingMonitor} error={monitorError} onFetch={fetchOpenComandas} onComandaClick={handleAddComandaPorClique} /> <div className="bg-white dark:bg-gray-900 p-4 sm:p-6 rounded-lg shadow"> <h2 className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-4">Comandas para Fechamento</h2> <form onSubmit={handleAddComanda} className="flex items-center gap-2 mb-4"> <input type="text" ref={addComandaInputRef} value={searchInputValue} onChange={(e) => setSearchInputValue(e.target.value)} disabled={isLoadingComanda} placeholder="Adicionar por Número" className="w-full border rounded px-2 py-1.5 text-sm bg-gray-50 dark:bg-gray-800 border-gray-300 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500" /> <button type="submit" disabled={isLoadingComanda || !searchInputValue.trim()} className="px-4 py-1.5 border rounded bg-blue-600 text-white text-sm disabled:opacity-50">{isLoadingComanda ? '...' : 'Add'}</button> </form> {comandaError && <p className="mb-2 text-sm text-center text-red-500 bg-red-100 dark:bg-red-900/20 p-2 rounded">{comandaError}</p>} <div className="mt-4 min-h-[200px]"> {selectedComandas.length === 0 ? ( <p className='text-center italic text-gray-500 dark:text-gray-400 pt-10'>Selecione comandas na lista à esquerda ou adicione por número.</p> ) : ( <div className="space-y-2 max-h-[40vh] overflow-y-auto pr-2"> {selectedComandas.map(com => ( <div key={com.id} className="grid grid-cols-12 gap-2 items-center p-2 border dark:border-gray-700 rounded bg-gray-50 dark:bg-gray-800 text-sm"> <div className="col-span-2 font-bold text-gray-800 dark:text-gray-100">{com.numero}</div> <div className="col-span-6 text-gray-600 dark:text-gray-300 truncate">{com.cliente_nome || '-'}</div> <div className="col-span-3 text-right font-semibold">{formatCurrency(com.total_atual_calculado)}</div> <div className="col-span-1 text-right"><button onClick={() => handleRemoveComanda(com.id)} className="text-red-500 hover:text-red-700 font-bold text-lg">×</button></div> </div> ))} </div> )} </div> {selectedComandas.length > 0 && ( <div className="mt-4 pt-4 border-t dark:border-gray-700"> <div className="text-right font-bold text-xl mb-6"><span>Total: </span><span>{formatCurrency(selectedComandas.reduce((acc, com) => acc + Number(com.total_atual_calculado || 0), 0))}</span></div> <button onClick={handleIniciarFechamento} className="w-full px-4 py-3 text-lg font-bold border rounded bg-green-600 text-white hover:bg-green-700 disabled:opacity-50 transition-all duration-300">Ir para Fechamento &rarr;</button> </div> )} </div> </div> )}
-                {viewMode === 'fechamento' && openSession && ( <div className="bg-white dark:bg-gray-900 p-4 sm:p-6 rounded-lg shadow"> <button onClick={() => { handleVoltarParaMonitor(); }} className="text-sm text-blue-600 dark:text-blue-400 hover:underline mb-4 inline-flex items-center gap-1"><FiArrowLeft size={14} /> Voltar para Seleção</button> <h2 className="text-xl font-bold mb-4 text-gray-800 dark:text-gray-200">Fechamento de Comandas</h2> {comandaError && <p className="mb-4 text-center text-red-600 bg-red-100 dark:bg-red-900/20 p-2 rounded-md text-sm">{comandaError}</p>} <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 mt-4"> <div className="lg:col-span-3 space-y-4"> <div className='p-3 border dark:border-gray-700 rounded bg-white dark:bg-gray-900'> <h4 className="text-base font-semibold mb-2 p-2 border-b dark:border-gray-700">Itens Consumidos</h4> {isLoadingItems ? (<p className='italic text-xs text-center py-4'>Buscando itens...</p>) : comandaItems.length === 0 ? (<p className='italic text-xs text-center py-4'>Nenhum item encontrado.</p>) : ( <ul className='text-xs space-y-1.5 max-h-[65vh] overflow-y-auto pr-2'>{comandaItems.sort((a,b) => (a.numero_comanda||'').localeCompare(b.numero_comanda||'') || (a.data_hora_pedido||'').localeCompare(b.data_hora_pedido||'') || a.id - b.id).map((item, index, arr) => { const q = Number(item.quantidade||0), p = Number(item.preco_unitario_momento||0), subtotal=q*p; const showComandaHeader = selectedComandas.length > 1 && (index === 0 || item.numero_comanda !== arr[index-1].numero_comanda); 
+                {viewMode === 'fechamento' && openSession && ( <div className="bg-white dark:bg-gray-900 p-4 sm:p-6 rounded-lg shadow"> <button onClick={() => { handleVoltarParaMonitor(); }} className="text-sm text-blue-600 dark:text-blue-400 hover:underline mb-4 inline-flex items-center gap-1"><FiArrowLeft size={14} /> Voltar para Seleção</button> <h2 className="text-xl font-bold mb-4 text-gray-800 dark:text-gray-200">Fechamento de Comandas</h2> {comandaError && <p className="mb-4 text-center text-red-600 bg-red-100 dark:bg-red-900/20 p-2 rounded-md text-sm">{comandaError}</p>} <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 mt-4"> <div className="lg:col-span-3 space-y-4"> <div className='p-3 border dark:border-gray-700 rounded bg-white dark:bg-gray-900'> <h4 className="text-base font-semibold mb-2 p-2 border-b dark:border-gray-700">Itens Consumidos</h4> {isLoadingItems ? (<p className='italic text-xs text-center py-4'>Buscando itens...</p>) : comandaItems.length === 0 ? (<p className='italic text-xs text-center py-4'>Nenhum item encontrado.</p>) : ( <ul className='text-xs space-y-1.5 max-h-[65vh] overflow-y-auto pr-2'>
+                    {comandaItems
+    .filter(item => item.status_item !== 'cancelado') // [CORREÇÃO] Filtra itens cancelados
+    .sort((a,b) => (a.numero_comanda||'').localeCompare(b.numero_comanda||'') || (a.data_hora_pedido||'').localeCompare(b.data_hora_pedido||'') || a.id - b.id)
+    .map((item, index, arr) => { const q = Number(item.quantidade||0), p = Number(item.preco_unitario_momento||0), subtotal=q*p; const showComandaHeader = selectedComandas.length > 1 && (index === 0 || item.numero_comanda !== arr[index-1].numero_comanda); 
                     return (
     <React.Fragment key={`item-${item.id}`}>
         {showComandaHeader && (
@@ -480,6 +517,13 @@ const CashierMainPage: React.FC = () => {
                     {formatCurrency(subtotal)}
                 </span>
             </div>
+            <button 
+        onClick={() => handleCancelarItem(item.id)}
+        className="ml-2 text-red-500 hover:text-red-700 p-1"
+        title="Cancelar Item"
+    >
+        <FiTrash2 size={16} />
+    </button>
         </li>
     </React.Fragment>
 );
