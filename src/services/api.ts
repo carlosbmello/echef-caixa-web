@@ -1,13 +1,12 @@
-// src/services/api.ts (VERSÃO DINÂMICA)
+// src/services/api.ts (VERSÃO HÍBRIDA NUVEM/LOCAL)
 import axios from 'axios';
 
-// --- LÓGICA DE URL DINÂMICA ---
 const getBaseURL = () => {
     const protocol = window.location.protocol;
     const hostname = window.location.hostname;
 
-    // 1. VERIFICA SE É AMBIENTE LOCAL (Mini PC ou Dev)
-    // Se o endereço for localhost, IP de rede local ou 127.0.0.1
+    // 1. VERIFICA SE ESTÁ NO AMBIENTE LOCAL (Mini PC ou Servidor de Borda)
+    // Identifica se o acesso é via localhost, IP de rede ou domínio .local
     const isLocal = 
         hostname === 'localhost' || 
         hostname === '127.0.0.1' || 
@@ -15,27 +14,30 @@ const getBaseURL = () => {
         hostname.endsWith('.local');
 
     if (isLocal) {
-        // Lógica para o Servidor Local (Mantém o funcionamento offline)
+        // No servidor local, usamos a porta 3010 diretamente para garantir o funcionamento offline
         return `${protocol}//${hostname}:3010/api/admin`;
     }
 
     // 2. AMBIENTE DE NUVEM (PRODUÇÃO)
-    // Na nuvem, o Nginx já redireciona a porta 443 para a 3010 internamente.
-    // Usamos o subdomínio dedicado da API que você criou no CloudPanel.
+    // Na nuvem, o Nginx já gerencia o SSL e o redirecionamento da porta 443 para a 3010.
+    // Usamos o subdomínio central da API.
     return `https://api.neverlandbar.com.br/api/admin`;
 };
 
 const API_BASE_URL = getBaseURL();
 
-console.log('[API Service] Conectando em:', API_BASE_URL);
+console.log('=== API INITIALIZATION ===');
+console.log(`[API Service] Conectando em: ${API_BASE_URL}`);
 
-const apiClient = axios.create({
-    baseURL: API_BASE_URL,
-    timeout: 10000,
+const api = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
+    'Content-Type': 'application/json'
+  },
+  timeout: 10000
 });
 
-
-// --- 1. INTERCEPTOR DE REQUISIÇÃO ---
+// --- 1. INTERCEPTOR DE REQUISIÇÃO (Mantenha como está) ---
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('echef-token') || localStorage.getItem('authToken');
   if (token) {
@@ -47,7 +49,7 @@ api.interceptors.request.use((config) => {
   return Promise.reject(error);
 });
 
-// --- 2. INTERCEPTOR DE RESPOSTA ---
+// --- 2. INTERCEPTOR DE RESPOSTA (Mantenha como está) ---
 api.interceptors.response.use(
   (response) => {
     return response;
