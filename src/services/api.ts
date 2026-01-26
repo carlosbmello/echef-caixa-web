@@ -2,23 +2,38 @@
 import axios from 'axios';
 
 // --- LÓGICA DE URL DINÂMICA ---
-const protocol = window.location.protocol;
-const hostname = window.location.hostname;
-const port = '3010'; 
+const getBaseURL = () => {
+    const protocol = window.location.protocol;
+    const hostname = window.location.hostname;
 
-const dynamicBaseURL = `${protocol}//${hostname}:${port}/api`;
-const adminBaseUrl = `${dynamicBaseURL}/admin`;
+    // 1. VERIFICA SE É AMBIENTE LOCAL (Mini PC ou Dev)
+    // Se o endereço for localhost, IP de rede local ou 127.0.0.1
+    const isLocal = 
+        hostname === 'localhost' || 
+        hostname === '127.0.0.1' || 
+        hostname.startsWith('192.168.') || 
+        hostname.endsWith('.local');
 
-console.log('=== API INITIALIZATION ===');
-console.log(`[API Service] Conectando dinamicamente em: ${adminBaseUrl}`);
+    if (isLocal) {
+        // Lógica para o Servidor Local (Mantém o funcionamento offline)
+        return `${protocol}//${hostname}:3010/api/admin`;
+    }
 
-const api = axios.create({
-  baseURL: adminBaseUrl,
-  headers: {
-    'Content-Type': 'application/json'
-  },
-  timeout: 10000
+    // 2. AMBIENTE DE NUVEM (PRODUÇÃO)
+    // Na nuvem, o Nginx já redireciona a porta 443 para a 3010 internamente.
+    // Usamos o subdomínio dedicado da API que você criou no CloudPanel.
+    return `https://api.neverlandbar.com.br/api/admin`;
+};
+
+const API_BASE_URL = getBaseURL();
+
+console.log('[API Service] Conectando em:', API_BASE_URL);
+
+const apiClient = axios.create({
+    baseURL: API_BASE_URL,
+    timeout: 10000,
 });
+
 
 // --- 1. INTERCEPTOR DE REQUISIÇÃO ---
 api.interceptors.request.use((config) => {
