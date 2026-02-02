@@ -47,10 +47,8 @@ const CashierHeader: React.FC<{
     onOpenErrors: () => void;
 }> = ({ user, onLogout, onToggleDark, isDark, errorCount, onOpenErrors }) => (
     <header className="bg-gray-800 dark:bg-gray-900 text-white p-3 sm:p-4 flex justify-between items-center shadow-md flex-shrink-0">
+        <h1 className="text-lg sm:text-xl font-semibold">eChef Caixa</h1>
         <div className="flex items-center gap-4">
-            <h1 className="text-lg sm:text-xl font-semibold">eChef Caixa</h1>
-            
-            {/* Ícone de Alerta de Impressão - Aparece apenas se houver erros */}
             {errorCount > 0 && (
                 <button 
                     onClick={onOpenErrors}
@@ -60,13 +58,10 @@ const CashierHeader: React.FC<{
                     <FiPrinter /> {errorCount} ERRO{errorCount > 1 ? 'S' : ''}
                 </button>
             )}
-        </div>
-
-        <div className='text-xs sm:text-sm flex items-center gap-4'>
             <button onClick={onToggleDark} className="p-2 rounded-full hover:bg-gray-700 dark:hover:bg-gray-600 text-xl">
                 {isDark ? '☀️' : '🌙'}
             </button>
-            <span>Usuário: {user?.nome || 'N/A'}</span>
+            <span className="text-xs sm:text-sm">Usuário: {user?.nome || 'N/A'}</span>
             <button onClick={onLogout} className="ml-3 px-3 py-1 bg-red-600 hover:bg-red-700 rounded text-xs">Logout</button>
         </div>
     </header>
@@ -80,7 +75,6 @@ const PrintErrorsModal: React.FC<{
     onRetry: (id: number) => void;
 }> = ({ isOpen, onClose, errors, onRetry }) => {
     if (!isOpen) return null;
-
     return (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
             <div className="bg-white dark:bg-gray-900 rounded-lg shadow-xl w-full max-w-2xl overflow-hidden border border-red-200 dark:border-red-900/30">
@@ -90,7 +84,6 @@ const PrintErrorsModal: React.FC<{
                     </h3>
                     <button onClick={onClose} className="text-gray-500 hover:text-gray-700 dark:text-gray-400 font-bold text-xl">✕</button>
                 </div>
-                
                 <div className="p-4 max-h-[60vh] overflow-y-auto bg-gray-50 dark:bg-gray-950">
                     {errors.length === 0 ? (
                         <p className="text-center text-gray-500 py-10 italic">Nenhum erro pendente no momento.</p>
@@ -107,10 +100,7 @@ const PrintErrorsModal: React.FC<{
                                             {error.mensagem_erro}
                                         </p>
                                     </div>
-                                    <button 
-                                        onClick={() => onRetry(error.id)}
-                                        className="bg-blue-600 text-white px-4 py-2 rounded text-xs font-bold hover:bg-blue-700 flex items-center gap-2 flex-shrink-0 shadow transition-transform active:scale-95"
-                                    >
+                                    <button onClick={() => onRetry(error.id)} className="bg-blue-600 text-white px-4 py-2 rounded text-xs font-bold hover:bg-blue-700 flex items-center gap-2 flex-shrink-0 shadow transition-transform active:scale-95">
                                         <FiRefreshCw size={14} /> Reimprimir
                                     </button>
                                 </div>
@@ -118,7 +108,6 @@ const PrintErrorsModal: React.FC<{
                         </div>
                     )}
                 </div>
-                
                 <div className="p-4 border-t dark:border-gray-700 text-right bg-white dark:bg-gray-900">
                     <button onClick={onClose} className="px-6 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded text-sm font-bold hover:bg-gray-300 transition-colors">Fechar</button>
                 </div>
@@ -166,28 +155,17 @@ const SessionStatus: React.FC<{
                     </div>
                 )}
             </div>
-
             <div className="flex gap-2 flex-shrink-0">
                 {!isLoading && isAllowed && (
                     <>
                         {openSession ? (
                             <>
-                                <button onClick={onConsult} className="px-3 py-1 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded text-xs font-semibold hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors border border-gray-300 dark:border-gray-600">
-                                    Consultar
-                                </button>
-                                <button onClick={onMove} className="px-3 py-1 bg-yellow-500 text-white rounded text-xs font-semibold shadow-sm hover:bg-yellow-600 transition-colors">
-                                    Movimentação
-                                </button>
-                                <button onClick={onClose} className="px-3 py-1 bg-red-600 text-white rounded text-xs font-semibold shadow-sm hover:bg-red-700 transition-colors">
-                                    Fechar Caixa
-                                </button>
+                                <button onClick={onConsult} className="px-3 py-1 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded text-xs font-semibold hover:bg-gray-300 dark:hover:bg-gray-600 border border-gray-300">Consultar</button>
+                                <button onClick={onMove} className="px-3 py-1 bg-yellow-500 text-white rounded text-xs font-semibold hover:bg-yellow-600">Movimentação</button>
+                                <button onClick={onClose} className="px-3 py-1 bg-red-600 text-white rounded text-xs font-semibold hover:bg-red-700">Fechar Caixa</button>
                             </>
                         ) : (
-                            !error && (
-                                <button onClick={onOpen} className="px-4 py-1.5 bg-green-600 text-white rounded text-sm font-bold shadow hover:bg-green-700 transition-colors">
-                                    Abrir Caixa
-                                </button>
-                            )
+                            !error && <button onClick={onOpen} className="px-4 py-1.5 bg-green-600 text-white rounded text-sm font-bold shadow hover:bg-green-700">Abrir Caixa</button>
                         )}
                     </>
                 )}
@@ -200,12 +178,12 @@ const MonitorView: React.FC<{ comandasList: Comanda[]; isLoading: boolean; error
     <div className="bg-white dark:bg-gray-900 p-4 sm:p-6 rounded-lg shadow h-full">
         <div className='flex justify-between items-center mb-4 gap-4'>
             <h2 className="text-xl font-bold text-gray-800 dark:text-gray-200">Monitor de Comandas Abertas</h2>
-            <button onClick={onFetch} disabled={isLoading} className='px-4 py-2 text-xs border border-gray-300 dark:border-gray-600 rounded bg-blue-100 dark:bg-gray-700 dark:text-gray-200 hover:bg-blue-200 dark:hover:bg-gray-600 disabled:opacity-50 flex items-center gap-1'>
+            <button onClick={onFetch} disabled={isLoading} className='px-4 py-2 text-xs border border-gray-300 dark:border-gray-600 rounded bg-blue-100 dark:bg-gray-700 hover:bg-blue-200 disabled:opacity-50 flex items-center gap-1'>
                 {isLoading ? '...' : <><FiRefreshCw size={12}/> Atualizar</>}
             </button>
         </div>
         {error && <p className="text-red-500">{error}</p>}
-        {isLoading ? ( <p className='text-center italic text-gray-500 dark:text-gray-400 py-4'>Carregando comandas...</p> ) : comandasList.length === 0 ? ( <p className='text-center italic text-gray-500 dark:text-gray-400 py-4'>Nenhuma comanda aberta no momento.</p> ) : (
+        {isLoading ? ( <p className='text-center italic text-gray-500 py-4'>Carregando...</p> ) : (
             <div className="overflow-x-auto max-h-[60vh]">
                 <table className="w-full text-sm text-left text-gray-600 dark:text-gray-300">
                     <thead className="text-xs text-gray-700 dark:text-gray-300 uppercase bg-gray-50 dark:bg-gray-700 sticky top-0">
@@ -229,8 +207,6 @@ const MonitorView: React.FC<{ comandasList: Comanda[]; isLoading: boolean; error
 // --- COMPONENTE PRINCIPAL ---
 const CashierMainPage: React.FC = () => {
     const { user, logout } = useAuth();
-    
-    // ESTADOS GERAIS
     const [isDarkMode, setIsDarkMode] = useState(() => localStorage.getItem('theme') === 'dark');
     const [viewMode, setViewMode] = useState<'monitor' | 'fechamento'>('monitor');
     const [openComandasList, setOpenComandasList] = useState<Comanda[]>([]);
@@ -240,18 +216,12 @@ const CashierMainPage: React.FC = () => {
     const [openSession, setOpenSession] = useState<Session | null | undefined>(undefined);
     const [isLoadingSession, setIsLoadingSession] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
-
-    // ESTADOS DE ERROS DE IMPRESSÃO
     const [printErrors, setPrintErrors] = useState<PrintError[]>([]);
     const [showPrintErrorsModal, setShowPrintErrorsModal] = useState(false);
-
-    // ESTADOS DE MODAIS
     const [showOpenModal, setShowOpenModal] = useState(false);
     const [showCloseModal, setShowCloseModal] = useState(false);
     const [showMovementModal, setShowMovementModal] = useState(false);
     const [showConsultaModal, setShowConsultaModal] = useState(false);
-
-    // ESTADOS DE FECHAMENTO
     const [searchInputValue, setSearchInputValue] = useState('');
     const [isLoadingComanda, setIsLoadingComanda] = useState<boolean>(false);
     const [comandaError, setComandaError] = useState<string | null>(null);
@@ -275,559 +245,290 @@ const CashierMainPage: React.FC = () => {
     const [groupAcrescimosCents, setGroupAcrescimosCents] = useState(0);
     const [groupDescontosCents, setGroupDescontosCents] = useState(0);
     const [paymentInputKey, setPaymentInputKey] = useState(Date.now());
-    
     const initialFetchDoneRef = useRef(false);
     const isCashierAllowed = user?.role === 'caixa' || user?.role === 'admin';
     const addComandaInputRef = useRef<HTMLInputElement>(null);
 
-    // --- FUNÇÕES DE BUSCA ---
-
     const toggleDarkMode = () => setIsDarkMode(!isDarkMode);
     const handleVoltarParaMonitor = useCallback(() => { setViewMode('monitor'); }, []);
     
-    // Busca comandas abertas
     const fetchOpenComandas = useCallback(async () => { 
-        setIsLoadingMonitor(true); 
-        setMonitorError(null); 
+        setIsLoadingMonitor(true); setMonitorError(null); 
         try { 
             const cs = await comandaService.getAllComandas({ status: 'aberta' }); 
             cs.sort((a, b) => (a.numero || '').localeCompare(b.numero || '', undefined, { numeric: true })); 
             setOpenComandasList(cs); 
-        } catch (err: any) { 
-            setMonitorError(err.message); 
-            setOpenComandasList([]); 
-        } finally { 
-            setIsLoadingMonitor(false); 
-        } 
+        } catch (err: any) { setMonitorError(err.message); setOpenComandasList([]); } finally { setIsLoadingMonitor(false); } 
     }, []);
 
-    // Busca status da sessão e formas de pagamento
     const fetchInitialData = useCallback(async () => { 
-        setIsLoadingSession(true); 
-        setIsLoadingPayMethods(true); 
-        setError(null); 
+        setIsLoadingSession(true); setIsLoadingPayMethods(true); setError(null); 
         try { 
             const [s, m] = await Promise.all([sessionService.getLastOpenSession(), paymentMethodService.getAllPaymentMethods({ ativo: true })]); 
-            setOpenSession(s); 
-            setPaymentMethods(m || []); 
+            setOpenSession(s); setPaymentMethods(m || []); 
         } catch (err: any) { 
-            if (axios.isAxiosError(err) && err.response?.status === 404) { 
-                setOpenSession(null); 
-                try { 
-                    const m = await paymentMethodService.getAllPaymentMethods({ ativo: true }); 
-                    setPaymentMethods(m || []); 
-                } catch (mErr: any) { 
-                    setError("Erro ao carregar formas de pagamento."); 
-                    setPaymentMethods([]); 
-                } 
-            } else { 
-                setError(err.message || "Erro ao carregar dados iniciais."); 
-                setOpenSession(null); 
-                setPaymentMethods([]); 
-            } 
-        } finally { 
-            setIsLoadingSession(false); 
-            setIsLoadingPayMethods(false); 
-        } 
+            if (axios.isAxiosError(err) && err.response?.status === 404) { setOpenSession(null); } else { setError("Erro."); setOpenSession(null); }
+        } finally { setIsLoadingSession(false); setIsLoadingPayMethods(false); } 
     }, []);
 
-    // LÓGICA DE MONITORAMENTO DE ERROS DE IMPRESSÃO (NOVO)
     const fetchPrintErrors = useCallback(async () => {
-        try {
-            // Rota que criamos no backend
-            const response = await api.get('/impressao-fila/erros');
-            setPrintErrors(response.data);
-        } catch (err) {
-            console.error("Erro ao verificar fila de impressão:", err);
-        }
+        try { const response = await api.get('/impressao-fila/erros'); setPrintErrors(response.data); } catch (err) { console.error(err); }
     }, []);
 
-    // Função para mandar imprimir novamente
     const handleRetryPrint = async (id: number) => {
-        try {
-            await api.post(`/impressao-fila/retry/${id}`);
-            toast.success("Comando de re-impressão enviado com sucesso!");
-            fetchPrintErrors(); // Atualiza a lista após resetar
-        } catch (err) {
-            toast.error("Erro ao tentar reiniciar a impressão.");
-        }
+        try { await api.post(`/impressao-fila/retry/${id}`); toast.success("Enviado!"); fetchPrintErrors(); } catch (err) { toast.error("Erro."); }
     };
 
-    // --- FUNÇÕES DE FECHAMENTO ---
-
     const fetchComandaDetails = useCallback(async (comandas: Comanda[]) => { 
-        const comandaIds = comandas.map(c => c.id); 
-        if (comandaIds.length === 0) { 
-            setComandaItems([]); 
-            setGroupPaymentsList([]); 
-            setGroupTotalConsumo(0); 
-            setGroupTotalPago(0); 
-            setComandaError(null); 
-            return; 
-        } 
+        if (comandas.length === 0) { setComandaItems([]); setGroupPaymentsList([]); setGroupTotalConsumo(0); setGroupTotalPago(0); return; } 
         setIsLoadingItems(true); 
-        setComandaError(null); 
         try { 
             const detailedComandasPromises = comandas.map(c => comandaService.getComandaByNumero(c.numero || '')); 
             const detailedComandas: ComandaComItens[] = await Promise.all(detailedComandasPromises); 
             const allItems = detailedComandas.flatMap(c => (c.itens || []).map(item => ({...item, numero_comanda: c.numero, cliente_nome_comanda: c.cliente_nome}))); 
             setComandaItems(allItems); 
-            const totalConsumo = detailedComandas.reduce((sum, c) => sum + Number(c.total_atual_calculado || 0), 0); 
-            setGroupTotalConsumo(totalConsumo); 
-        } catch (err: any) { 
-            setComandaError(err.message || "Falha ao carregar detalhes."); 
-            setComandaItems([]); 
-            setGroupTotalConsumo(0); 
-        } finally { 
-            setIsLoadingItems(false); 
-        } 
+            setGroupTotalConsumo(detailedComandas.reduce((sum, c) => sum + Number(c.total_atual_calculado || 0), 0)); 
+        } catch (err: any) { setComandaError("Erro ao carregar."); } finally { setIsLoadingItems(false); } 
     }, []);
 
     const handleRegisterPayment = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!selectedComandas.length || !openSession || !paymentValueCents) return;
-
         const fId = parseInt(selectedPaymentMethodId);
-        const valInReais = paymentValueCents;
-
-        if (isNaN(fId) || fId <= 0 || valInReais <= 0) {
-            setComandaError("Verifique a forma de pagamento e o valor.");
-            return;
-        }
-        if (valInReais > groupSaldoDevedor + 0.01) {
-            setComandaError(`Valor do pagamento ${formatCurrency(valInReais)} é maior que o saldo devedor ${formatCurrency(groupSaldoDevedor)}.`);
-            return;
-        }
-        
+        if (isNaN(fId) || paymentValueCents > groupSaldoDevedor + 0.01) { toast.error("Verifique os dados."); return; }
         setIsProcessingPayment(true);
-        setComandaError(null);
-        
         try {
-            const newPayment: UIPayment = {
-                id: Date.now(),
-                valor: valInReais.toString(),
-                data_hora: new Date().toISOString(),
-                nome_forma_pagamento: paymentMethods.find(m => m.id === fId)?.nome || 'N/A',
-                detalhes: paymentDetails.trim() || null
-            };
-
+            const newPayment: UIPayment = { id: Date.now(), valor: paymentValueCents.toString(), data_hora: new Date().toISOString(), nome_forma_pagamento: paymentMethods.find(m => m.id === fId)?.nome || 'N/A', detalhes: paymentDetails.trim() || null };
             const listaAtualizada = [...groupPaymentsList, newPayment];
-            const novoTotalPago = listaAtualizada.reduce((s, p) => s + Number(p.valor || 0), 0);
-            const novoSaldoDevedor = groupTotalAPagar - novoTotalPago;
-            
             setGroupPaymentsList(listaAtualizada);
-            toast.success(`Pagamento de ${formatCurrency(valInReais)} adicionado.`);
-            
-            if (novoSaldoDevedor <= 0.01) {
-                toast.info("Conta totalmente paga. Finalizando...");
-                setTimeout(() => {
-                    handleFinalizarTransacao(true, listaAtualizada);
-                }, 1500);
+            if ((groupTotalAPagar - listaAtualizada.reduce((s, p) => s + Number(p.valor || 0), 0)) <= 0.01) {
+                toast.info("Fechando conta..."); setTimeout(() => handleFinalizarTransacao(true, listaAtualizada), 1500);
             } else {
-                setSelectedPaymentMethodId('');
-                setPaymentValueCents(null);
-                setPaymentDetails('');
-                setPaymentInputKey(Date.now());
+                setSelectedPaymentMethodId(''); setPaymentValueCents(null); setPaymentDetails(''); setPaymentInputKey(Date.now());
             }
-
-        } catch (err: any) {
-            setComandaError(err.message);
-            toast.error(err.message || "Erro ao adicionar pagamento.");
-        } finally {
-            setIsProcessingPayment(false);
-        }
+        } catch (err: any) { toast.error("Erro."); } finally { setIsProcessingPayment(false); }
     };
 
     const handleFinalizarTransacao = async (skipConfirmation = false, pagamentosParaFinalizar?: UIPayment[]) => {
-        if (!selectedComandas.length || !openSession) {
-            toast.warn("Nenhuma comanda selecionada.");
-            return;
-        }
-        if (groupSaldoDevedor > 0.01 && !skipConfirmation) {
-            toast.error(`Saldo pendente de ${formatCurrency(groupSaldoDevedor)}.`);
-            return;
-        }
-        if (!skipConfirmation && !window.confirm(`Finalizar e fechar ${selectedComandas.length} comanda(s)?`)) {
-            return;
-        }
-
+        if (!selectedComandas.length || !openSession) return;
+        if (groupSaldoDevedor > 0.01 && !skipConfirmation) { toast.error("Ainda há saldo."); return; }
+        if (!skipConfirmation && !window.confirm(`Finalizar ${selectedComandas.length} comanda(s)?`)) return;
         setIsProcessingPayment(true);
         try {
             const listaDePagamentos = pagamentosParaFinalizar || groupPaymentsList;
-            const payload: FinalizarTransacaoPayload = {
-                comandaIds: selectedComandas.map(c => c.id),
-                taxa_servico: groupTaxaServico,
-                acrescimos: groupAcrescimosCents / 100,
-                descontos: groupDescontosCents / 100,
-                pagamentos: listaDePagamentos.map(p => {
-                    const methodId = paymentMethods.find(pm => pm.nome === p.nome_forma_pagamento)?.id;
-                    return { forma_pagamento_id: methodId || 0, valor: Number(p.valor), nome_forma_pagamento: p.nome_forma_pagamento };
-                })
-            };
-
+            const payload: FinalizarTransacaoPayload = { comandaIds: selectedComandas.map(c => c.id), taxa_servico: groupTaxaServico, acrescimos: groupAcrescimosCents / 100, descontos: groupDescontosCents / 100, pagamentos: listaDePagamentos.map(p => { const methodId = paymentMethods.find(pm => pm.nome === p.nome_forma_pagamento)?.id; return { forma_pagamento_id: methodId || 0, valor: Number(p.valor), nome_forma_pagamento: p.nome_forma_pagamento }; }) };
             await transacaoService.finalizar(payload);
-            toast.success("Comanda(s) finalizada(s)!");
-            setSelectedComandas([]);
-            handleVoltarParaMonitor();
-        } catch (err: any) {
-            toast.error(err.message || "Erro ao finalizar.");
-        } finally {
-            setIsProcessingPayment(false);
-        }
+            toast.success("Sucesso!"); setSelectedComandas([]); handleVoltarParaMonitor();
+        } catch (err: any) { toast.error("Erro ao finalizar."); } finally { setIsProcessingPayment(false); }
     };
 
-    const handleAddComanda = async (e?: React.FormEvent) => { 
+   const handleAddComanda = async (e?: React.FormEvent) => { 
         if (e) e.preventDefault(); 
         const num = searchInputValue.trim(); 
         if (!num) return; 
+        
         setIsLoadingComanda(true); 
         try { 
-            if (selectedComandas.some(c => c.numero === num)) throw new Error(`Comanda ${num} já está na lista.`); 
             const com = await comandaService.getComandaByNumero(num); 
-            if (['fechada','paga','cancelada'].includes(com.status||'')) throw new Error(`Comanda ${com.numero} está ${com.status}.`); 
-            setSelectedComandas(prev=>[...prev,com]); 
+            if (['fechada','paga','cancelada'].includes(com.status||'')) throw new Error("Comanda fechada."); 
+            
+            setSelectedComandas(prev => [...prev, com]); 
             setSearchInputValue(''); 
-            addComandaInputRef.current?.focus(); 
-        } catch(err:any){ 
-            setComandaError(err.message); 
-            toast.error(err.message); 
-        } finally{ 
+            
+        } catch(err: any){ 
+            toast.error(err.message);
+        } finally { 
             setIsLoadingComanda(false); 
+            // O segredo está aqui: o setTimeout garante que o input já foi 
+            // re-habilitado pelo React antes de tentarmos dar o foco.
+            setTimeout(() => {
+                addComandaInputRef.current?.focus();
+            }, 50);
         } 
     };
-
     const handleRemoveComanda = (comandaId: number) => { setSelectedComandas(prev => prev.filter(c => c.id !== comandaId)); };
     const handleAddComandaPorClique = (comanda: Comanda) => { if (selectedComandas.some(c => c.id === comanda.id)) return; setSelectedComandas(prev => [...prev, comanda]); };
     const handleTaxaChange=(e:React.ChangeEvent<HTMLInputElement>)=>{ setIncluirTaxa(e.target.checked); };
     const handleAcrescimosValueChange = (v: NumberFormatValues) => { setGroupAcrescimosCents(v.floatValue ? Math.round(v.floatValue * 100) : 0); };
     const handleDescontosValueChange = (v: NumberFormatValues) => { setGroupDescontosCents(v.floatValue ? Math.round(v.floatValue * 100) : 0); };
-    const handleShowOpenModal=()=>{setShowOpenModal(true);}; 
-    const handleShowCloseModal=()=>{setShowCloseModal(true);}; 
-    const handleShowMovementModal=()=>{setShowMovementModal(true);}; 
-    const handleOpenSuccess=()=>{setShowOpenModal(false);fetchInitialData();fetchOpenComandas();}; 
-    const handleCloseSuccess=()=>{setShowCloseModal(false);fetchInitialData();fetchOpenComandas();}; 
-    const handleMovementSuccess = () => { setShowMovementModal(false); fetchInitialData(); }; 
-    const handleLogout=()=>{logout();}; 
-
-    const handleIniciarFechamento = () => {
-        setComandaError(null);
-        setNumeroPessoas(1);
-        setSelectedPaymentMethodId('');
-        setPaymentValueCents(null);
-        setPaymentDetails('');
-        setGroupAcrescimosCents(0);
-        setGroupDescontosCents(0);
-        setGroupPaymentsList([]);
-        setViewMode('fechamento');
-    };
+    const handleShowOpenModal=()=>{setShowOpenModal(true);}; const handleShowCloseModal=()=>{setShowCloseModal(true);}; const handleShowMovementModal=()=>{setShowMovementModal(true);}; const handleOpenSuccess=()=>{setShowOpenModal(false);fetchInitialData();fetchOpenComandas();}; const handleCloseSuccess=()=>{setShowCloseModal(false);fetchInitialData();fetchOpenComandas();}; const handleMovementSuccess = () => { setShowMovementModal(false); fetchInitialData(); }; const handleLogout=()=>{logout();}; 
+    const handleIniciarFechamento = () => { setNumeroPessoas(1); setSelectedPaymentMethodId(''); setPaymentValueCents(null); setPaymentDetails(''); setGroupAcrescimosCents(0); setGroupDescontosCents(0); setGroupPaymentsList([]); setViewMode('fechamento'); };
 
     const handlePrintConferencia = async () => {
         if (!selectedComandas.length || isPrinting) return;
         setIsPrinting(true);
-        const PONTO_ID_CAIXA = 3;
         try {
-            const consumoFinal = groupTotalConsumo;
-            const acrescimosFinal = groupAcrescimosCents / 100;
-            const descontosFinal = groupDescontosCents / 100;
-            const taxaFinal = incluirTaxa ? consumoFinal * 0.10 : 0;
-            const totalFinal = consumoFinal + taxaFinal + acrescimosFinal - descontosFinal;
-
-            const jobData = {
-                cabecalho: { linha1: "NEVERLAND BAR", linha2: "Sua casa de espetaculos" },
-                comandas: selectedComandas.map(comanda => ({
-                    numero: comanda.numero,
-                    clienteNome: comanda.cliente_nome,
-                    itens: comandaItems
-                        .filter(item => item.numero_comanda === comanda.numero)
-                        .map(item => ({
-                            quantidade: `${formatQuantity(Number(item.quantidade || 0))}x`,
-                            nome: item.produto_nome,
-                            valor: (Number(item.quantidade || 0) * Number(item.preco_unitario_momento || 0))
-                        }))
-                })),
-                resumoTransacao: {
-                    totalConsumo: { descricao: "Total Consumo", valor: consumoFinal },
-                    taxaServico: { descricao: "(+) Taxa de Serviço (10%)", valor: taxaFinal },
-                    acrescimos: { descricao: "(+) Acréscimos", valor: acrescimosFinal },
-                    descontos: { descricao: "(-) Descontos", valor: descontosFinal },
-                    totalConta: { descricao: "Total da Conta", valor: totalFinal }
-                }
-            };
-            await printService.imprimirPorPonto(PONTO_ID_CAIXA, jobData, 'clienteConta');
-            toast.success("Conferência enviada!");
-        } catch (err: any) {
-            toast.error(err.message);
-        } finally {
-            setIsPrinting(false);
-        }
+            const jobData = { cabecalho: { linha1: "NEVERLAND BAR", linha2: "Sua casa de espetaculos" }, comandas: selectedComandas.map(comanda => ({ numero: comanda.numero, clienteNome: comanda.cliente_nome, itens: comandaItems.filter(item => item.numero_comanda === comanda.numero).map(item => ({ quantidade: `${formatQuantity(Number(item.quantidade || 0))}x`, nome: item.produto_nome, valor: (Number(item.quantidade || 0) * Number(item.preco_unitario_momento || 0)) })) })), resumoTransacao: { totalConsumo: { descricao: "Total Consumo", valor: groupTotalConsumo }, taxaServico: { descricao: "(+) Taxa de Serviço (10%)", valor: groupTaxaServico }, acrescimos: { descricao: "(+) Acréscimos", valor: groupAcrescimosCents / 100 }, descontos: { descricao: "(-) Descontos", valor: groupDescontosCents / 100 }, totalConta: { descricao: "Total da Conta", valor: groupTotalAPagar } } };
+            await printService.imprimirPorPonto(3, jobData, 'clienteConta'); toast.success("Impresso!");
+        } catch (err: any) { toast.error("Erro."); } finally { setIsPrinting(false); }
     };
     
     const handleCancelarItem = async (itemId: number) => {
-        if (!window.confirm("Cancelar este item?")) return;
-        const motivo = prompt("Motivo do cancelamento:");
-        if (!motivo) return;
-        try {
-            await api.post(`/pedidos/item/${itemId}/cancelar`, { motivo });
-            toast.success("Item cancelado.");
-            if (selectedComandas.length > 0) fetchComandaDetails(selectedComandas);
-        } catch (err: any) {
-            toast.error("Erro ao cancelar.");
-        }
+        if (!window.confirm("Cancelar?")) return;
+        const motivo = prompt("Motivo:"); if (!motivo) return;
+        try { await api.post(`/pedidos/item/${itemId}/cancelar`, { motivo }); toast.success("OK"); if (selectedComandas.length > 0) fetchComandaDetails(selectedComandas); } catch (err: any) { toast.error("Erro."); }
     };
 
-    const handleValorClick = (valorEmReais: number) => {
-        if (valorEmReais > 0) setPaymentValueCents(valorEmReais);
-    };
-    
-    const handlePaymentValueChange = (v: NumberFormatValues) => {
-        setPaymentValueCents(v.floatValue || null);
-    };
+    const handleValorClick = (valor: number) => { if (valor > 0) { setPaymentValueCents(valor); setPaymentInputKey(Date.now()); } };
+    const handlePaymentValueChange = (v: NumberFormatValues) => { setPaymentValueCents(v.floatValue || null); };
 
-    // --- EFFECTS ---
-
-    // Inicialização
-    useEffect(() => { 
-        if (!initialFetchDoneRef.current) { 
-            fetchInitialData(); 
-            fetchOpenComandas(); 
-            fetchPrintErrors();
-            initialFetchDoneRef.current = true; 
-        } 
-    }, [fetchInitialData, fetchOpenComandas, fetchPrintErrors]);
-
-    // Polling de Erros de Impressão (A cada 15 segundos)
+    useEffect(() => { if (!initialFetchDoneRef.current) { fetchInitialData(); fetchOpenComandas(); fetchPrintErrors(); initialFetchDoneRef.current = true; } }, [fetchInitialData, fetchOpenComandas, fetchPrintErrors]);
+    useEffect(() => { const interval = setInterval(fetchPrintErrors, 15000); return () => clearInterval(interval); }, [fetchPrintErrors]);
+    useEffect(() => { if (viewMode === 'monitor') fetchOpenComandas(); else if (viewMode === 'fechamento' && selectedComandas.length > 0) fetchComandaDetails(selectedComandas); }, [viewMode, selectedComandas, fetchComandaDetails, fetchOpenComandas]);
     useEffect(() => {
-        const interval = setInterval(fetchPrintErrors, 15000);
-        return () => clearInterval(interval);
-    }, [fetchPrintErrors]);
+        const totalPago = groupPaymentsList.reduce((s, p) => s + Number(p.valor || 0), 0);
+        setGroupTotalPago(totalPago);
+        const taxa = incluirTaxa ? groupTotalConsumo * 0.10 : 0;
+        const total = groupTotalConsumo + taxa + (groupAcrescimosCents / 100) - (groupDescontosCents / 100);
+        setGroupTaxaServico(taxa); setGroupTotalAPagar(total); setGroupSaldoDevedor(Math.max(0, total - totalPago));
+    }, [groupTotalConsumo, groupPaymentsList, incluirTaxa, groupAcrescimosCents, groupDescontosCents]);
 
-    // Lógica de visualização
-    useEffect(() => { 
-        if (viewMode === 'monitor') { 
-            fetchOpenComandas(); 
-        } else if (viewMode === 'fechamento' && selectedComandas.length > 0) { 
-            fetchComandaDetails(selectedComandas); 
-        } 
-    }, [viewMode, selectedComandas, fetchComandaDetails, fetchOpenComandas]);
-
-    // Cálculos de fechamento
+    useEffect(() => { if (addComandaInputRef.current) setTimeout(() => addComandaInputRef.current?.focus(), 100); }, [viewMode]);
+    useEffect(() => { const root = window.document.documentElement; root.classList.remove(isDarkMode ? 'light' : 'dark'); root.classList.add(isDarkMode ? 'dark' : 'light'); localStorage.setItem('theme', isDarkMode ? 'dark' : 'light'); }, [isDarkMode]);
     useEffect(() => {
-        if (viewMode === 'fechamento') {
-            const totalPagoCalculado = groupPaymentsList.reduce((s, p) => s + Number(p.valor || 0), 0);
-            setGroupTotalPago(totalPagoCalculado);
-            const acrescimos = groupAcrescimosCents / 100;
-            const descontos = groupDescontosCents / 100;
-            const taxa = incluirTaxa ? groupTotalConsumo * 0.10 : 0; 
-            const totalAPagar = groupTotalConsumo + taxa + acrescimos - descontos;
-            const saldoDevedor = totalAPagar - totalPagoCalculado;
-            setGroupTaxaServico(taxa);
-            setGroupTotalAPagar(totalAPagar);
-            setGroupSaldoDevedor(Math.abs(saldoDevedor) < 0.001 ? 0 : saldoDevedor);
-        }
-    }, [viewMode, groupTotalConsumo, groupPaymentsList, incluirTaxa, groupAcrescimosCents, groupDescontosCents]);
-
-    // Foco no input ao mudar de tela
-    useEffect(() => { if (addComandaInputRef.current) { setTimeout(() => { addComandaInputRef.current?.focus(); }, 100); } }, [viewMode]);
-    
-    // Tema escuro/claro
-    useEffect(() => { 
-        const root = window.document.documentElement; 
-        const oldTheme = isDarkMode ? 'light' : 'dark'; 
-        root.classList.remove(oldTheme); 
-        root.classList.add(isDarkMode ? 'dark' : 'light'); 
-        localStorage.setItem('theme', isDarkMode ? 'dark' : 'light'); 
-    }, [isDarkMode]);
-
-    useEffect(() => { document.title = 'Gerenciar Caixa - eChef Admin'; return () => { document.title = 'eChef Admin'; }; }, []);
-    
-    // --- RENDERING ---
-
-    if (openSession === undefined && isLoadingSession) { return <div className="flex items-center justify-center h-screen bg-gray-100 dark:bg-gray-800"><div className="text-lg text-gray-500 dark:text-gray-400 italic">Carregando Caixa...</div></div>; }
-    
+    if (viewMode === 'monitor') {
+        // Aguarda um milissegundo para garantir que o elemento apareceu na tela
+        setTimeout(() => addComandaInputRef.current?.focus(), 100);
+    }
+}, [viewMode]);
     return (
-        <div className="flex flex-col h-screen bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200">
-            
-            {/* Cabeçalho com o contador de erros de impressão */}
-            <CashierHeader 
-                user={user} 
-                onLogout={handleLogout} 
-                onToggleDark={toggleDarkMode} 
-                isDark={isDarkMode}
-                errorCount={printErrors.length}
-                onOpenErrors={() => setShowPrintErrorsModal(true)}
-            />
-
+        <div className="flex flex-col h-screen bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 font-sans">
+            <CashierHeader user={user} onLogout={handleLogout} onToggleDark={toggleDarkMode} isDark={isDarkMode} errorCount={printErrors.length} onOpenErrors={() => setShowPrintErrorsModal(true)} />
             <main className="flex-1 p-4 sm:p-6 overflow-y-auto space-y-6">
-                
-                <SessionStatus 
-                    openSession={openSession} 
-                    isLoading={isLoadingSession} 
-                    error={error} 
-                    onOpen={handleShowOpenModal} 
-                    onClose={handleShowCloseModal} 
-                    onMove={handleShowMovementModal} 
-                    onConsult={() => setShowConsultaModal(true)} 
-                    isAllowed={isCashierAllowed} 
-                />
-
-                {!openSession && !isLoadingSession && ( 
-                    <div className="text-center p-8 bg-white dark:bg-gray-900 rounded-lg shadow mt-6">
-                        <h2 className="text-xl font-bold text-gray-700 dark:text-gray-200">Caixa Fechado</h2>
-                        <p className="text-gray-500 dark:text-gray-400 mt-2">Abra o caixa para iniciar as operações.</p>
-                    </div> 
+                <SessionStatus openSession={openSession} isLoading={isLoadingSession} error={error} onOpen={handleShowOpenModal} onClose={handleShowCloseModal} onMove={handleShowMovementModal} onConsult={() => setShowConsultaModal(true)} isAllowed={isCashierAllowed} />
+                {openSession && viewMode === 'monitor' && (
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <MonitorView comandasList={openComandasList} isLoading={isLoadingMonitor} error={monitorError} onFetch={fetchOpenComandas} onComandaClick={handleAddComandaPorClique} />
+                        <div className="bg-white dark:bg-gray-900 p-4 sm:p-6 rounded-lg shadow">
+                            <h2 className="text-xl font-bold mb-4">Comandas para Fechamento</h2>
+                            <form onSubmit={handleAddComanda} className="flex items-center gap-2 mb-4">
+                                <input type="text" ref={addComandaInputRef} value={searchInputValue} onChange={(e) => setSearchInputValue(e.target.value)} disabled={isLoadingComanda} placeholder="Número" className="w-full border rounded px-2 py-1.5 bg-gray-50 dark:bg-gray-800" />
+                                <button type="submit" disabled={isLoadingComanda} className="px-4 py-1.5 border rounded bg-blue-600 text-white">Add</button>
+                            </form>
+                            <div className="mt-4 min-h-[200px]">
+                                {selectedComandas.length === 0 ? <p className="text-center italic pt-10">Vazio.</p> : (
+                                    <div className="space-y-2 max-h-[40vh] overflow-y-auto pr-2">
+                                        {selectedComandas.map(com => (
+                                            <div key={com.id} className="grid grid-cols-12 gap-2 p-2 border rounded dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm">
+                                                <div className="col-span-2 font-bold">{com.numero}</div>
+                                                <div className="col-span-6 truncate">{com.cliente_nome || '-'}</div>
+                                                <div className="col-span-3 text-right font-semibold">{formatCurrency(com.total_atual_calculado)}</div>
+                                                <div className="col-span-1 text-right"><button onClick={() => handleRemoveComanda(com.id)} className="text-red-500 font-bold">×</button></div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                            {selectedComandas.length > 0 && (
+                                <div className="mt-4 pt-4 border-t">
+                                    <div className="text-right font-bold text-xl mb-6">Total: {formatCurrency(selectedComandas.reduce((acc, com) => acc + Number(com.total_atual_calculado || 0), 0))}</div>
+                                    <button onClick={handleIniciarFechamento} className="w-full px-4 py-3 text-lg font-bold rounded bg-green-600 text-white">Ir para Fechamento &rarr;</button>
+                                </div>
+                            )}
+                        </div>
+                    </div>
                 )}
-
-                {openSession && viewMode === 'monitor' && ( 
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6"> 
-                        <MonitorView comandasList={openComandasList} isLoading={isLoadingMonitor} error={monitorError} onFetch={fetchOpenComandas} onComandaClick={handleAddComandaPorClique} /> 
-                        <div className="bg-white dark:bg-gray-900 p-4 sm:p-6 rounded-lg shadow"> 
-                            <h2 className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-4">Comandas para Fechamento</h2> 
-                            <form onSubmit={handleAddComanda} className="flex items-center gap-2 mb-4"> 
-                                <input type="text" ref={addComandaInputRef} value={searchInputValue} onChange={(e) => setSearchInputValue(e.target.value)} disabled={isLoadingComanda} placeholder="Adicionar por Número" className="w-full border rounded px-2 py-1.5 text-sm bg-gray-50 dark:bg-gray-800 border-gray-300 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500" /> 
-                                <button type="submit" disabled={isLoadingComanda || !searchInputValue.trim()} className="px-4 py-1.5 border rounded bg-blue-600 text-white text-sm disabled:opacity-50">{isLoadingComanda ? '...' : 'Add'}</button> 
-                            </form> 
-                            {comandaError && <p className="mb-2 text-sm text-center text-red-500 bg-red-100 dark:bg-red-900/20 p-2 rounded">{comandaError}</p>} 
-                            <div className="mt-4 min-h-[200px]"> 
-                                {selectedComandas.length === 0 ? ( 
-                                    <p className='text-center italic text-gray-500 dark:text-gray-400 pt-10'>Selecione comandas na lista à esquerda ou adicione por número.</p> 
-                                ) : ( 
-                                    <div className="space-y-2 max-h-[40vh] overflow-y-auto pr-2"> 
-                                        {selectedComandas.map(com => ( 
-                                            <div key={com.id} className="grid grid-cols-12 gap-2 items-center p-2 border dark:border-gray-700 rounded bg-gray-50 dark:bg-gray-800 text-sm"> 
-                                                <div className="col-span-2 font-bold text-gray-800 dark:text-gray-100">{com.numero}</div> 
-                                                <div className="col-span-6 text-gray-600 dark:text-gray-300 truncate">{com.cliente_nome || '-'}</div> 
-                                                <div className="col-span-3 text-right font-semibold">{formatCurrency(com.total_atual_calculado)}</div> 
-                                                <div className="col-span-1 text-right"><button onClick={() => handleRemoveComanda(com.id)} className="text-red-500 hover:text-red-700 font-bold text-lg">×</button></div> 
-                                            </div> 
-                                        ))} 
-                                    </div> 
-                                )} 
-                            </div> 
-                            {selectedComandas.length > 0 && ( 
-                                <div className="mt-4 pt-4 border-t dark:border-gray-700"> 
-                                    <div className="text-right font-bold text-xl mb-6"><span>Total: </span><span>{formatCurrency(selectedComandas.reduce((acc, com) => acc + Number(com.total_atual_calculado || 0), 0))}</span></div> 
-                                    <button onClick={handleIniciarFechamento} className="w-full px-4 py-3 text-lg font-bold border rounded bg-green-600 text-white hover:bg-green-700 disabled:opacity-50 transition-all duration-300">Ir para Fechamento &rarr;</button> 
-                                </div> 
-                            )} 
-                        </div> 
-                    </div> 
-                )}
-
-                {viewMode === 'fechamento' && openSession && ( 
-                    <div className="bg-white dark:bg-gray-900 p-4 sm:p-6 rounded-lg shadow"> 
-                        <button onClick={handleVoltarParaMonitor} className="text-sm text-blue-600 dark:text-blue-400 hover:underline mb-4 inline-flex items-center gap-1"><FiArrowLeft size={14} /> Voltar para Seleção</button> 
-                        <h2 className="text-xl font-bold mb-4 text-gray-800 dark:text-gray-200">Fechamento de Comandas</h2> 
-                        {comandaError && <p className="mb-4 text-center text-red-600 bg-red-100 dark:bg-red-900/20 p-2 rounded-md text-sm">{comandaError}</p>} 
-                        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 mt-4"> 
-                            
-                            <div className="lg:col-span-3 space-y-4"> 
-                                <div className='p-3 border dark:border-gray-700 rounded bg-white dark:bg-gray-900'> 
-                                    <h4 className="text-base font-semibold mb-2 p-2 border-b dark:border-gray-700">Itens Consumidos</h4> 
-                                    {isLoadingItems ? (<p className='italic text-xs text-center py-4'>Buscando itens...</p>) : comandaItems.length === 0 ? (<p className='italic text-xs text-center py-4'>Nenhum item encontrado.</p>) : ( 
+                {viewMode === 'fechamento' && openSession && (
+                    <div className="bg-white dark:bg-gray-900 p-4 sm:p-6 rounded-lg shadow">
+                        <button onClick={handleVoltarParaMonitor} className="text-sm text-blue-600 mb-4 flex items-center gap-1"><FiArrowLeft /> Voltar para Seleção</button>
+                        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+                            <div className="lg:col-span-3 space-y-4">
+                                <div className='p-3 border dark:border-gray-700 rounded bg-white dark:bg-gray-900'>
+                                    <h4 className="text-base font-semibold mb-2 border-b pb-2">Itens Consumidos</h4>
+                                    {isLoadingItems ? <p className="text-center py-4 italic">Buscando...</p> : (
                                         <ul className='text-xs space-y-1.5 max-h-[65vh] overflow-y-auto pr-2'>
-                                            {comandaItems
-                                                .filter(item => item.status_item !== 'cancelado') 
-                                                .sort((a,b) => (a.numero_comanda||'').localeCompare(b.numero_comanda||'') || (a.data_hora_pedido||'').localeCompare(b.data_hora_pedido||'') || a.id - b.id)
-                                                .map((item, index, arr) => { 
-                                                    const q = Number(item.quantidade||0), p = Number(item.preco_unitario_momento||0), subtotal=q*p; 
-                                                    const showComandaHeader = selectedComandas.length > 1 && (index === 0 || item.numero_comanda !== arr[index-1].numero_comanda); 
-                                                    return (
-                                                        <React.Fragment key={`item-${item.id}`}>
-                                                            {showComandaHeader && (
-                                                                <li className="pt-2 mt-2 border-t border-dashed border-gray-300 dark:border-gray-700 bg-blue-50 dark:bg-blue-900/20 p-2 rounded">
-                                                                    <p className="text-sm font-bold text-blue-700 dark:text-blue-400">Comanda: {item.numero_comanda || 'N/D'}</p>
-                                                                    {item.cliente_nome_comanda && (<p className="text-xs text-gray-600 dark:text-gray-400">Cliente: {item.cliente_nome_comanda}</p>)}
-                                                                </li>
-                                                            )}
-                                                            <li className='flex justify-between items-start py-2 border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors'>
-                                                                <div className="flex-1 mr-2">
-                                                                    <span className="font-bold text-gray-800 dark:text-gray-100 text-sm block leading-tight">{item.produto_nome || '?'}</span>
-                                                                    {item.observacao_item && <span className="block text-xs text-gray-600 dark:text-gray-400 mt-1 leading-snug">{item.observacao_item}</span>}
-                                                                    <div className="text-[10px] text-gray-400 mt-1 leading-none">{item.data_hora_pedido ? formatDateTime(item.data_hora_pedido) : ''}{item.nome_garcom ? ` - ${item.nome_garcom}` : ''}</div>
-                                                                </div>
-                                                                <div className="text-right flex-shrink-0">
-                                                                    <span className="block text-xs text-gray-500 dark:text-gray-400 leading-tight">{formatQuantity(q)} x {formatCurrency(p)}</span>
-                                                                    <span className="block font-bold text-gray-800 dark:text-gray-200 leading-tight text-sm">{formatCurrency(subtotal)}</span>
-                                                                </div>
-                                                                <button onClick={() => handleCancelarItem(item.id)} className="ml-2 text-red-500 hover:text-red-700 p-1" title="Cancelar Item"><FiTrash2 size={16} /></button>
-                                                            </li>
-                                                        </React.Fragment>
-                                                    );
-                                                })
-                                            }
+                                            {comandaItems.filter(i => i.status_item !== 'cancelado').map((item) => (
+                                                <li key={item.id} className='flex justify-between py-2 border-b'>
+                                                    <div className="flex-1"><span className="font-bold text-sm block">{item.produto_nome}</span>{item.observacao_item && <span className="block text-gray-500 italic">{item.observacao_item}</span>}</div>
+                                                    <div className="text-right"><span className="block text-xs">{formatQuantity(item.quantidade)} x {formatCurrency(item.preco_unitario_momento)}</span><span className="block font-bold text-sm">
+    {formatCurrency(Number(item.quantidade) * Number(item.preco_unitario_momento))}
+</span></div>
+                                                    <button onClick={() => handleCancelarItem(item.id)} className="ml-2 text-red-500"><FiTrash2 size={16} /></button>
+                                                </li>
+                                            ))}
                                         </ul>
-                                    )} 
-                                </div> 
-                            </div> 
+                                    )}
+                                </div>
+                            </div>
+                            <div className="lg:col-span-2 space-y-4">
+                                <div className='text-sm border dark:border-gray-700 p-3 rounded bg-gray-50 dark:bg-gray-800 space-y-2'>
+                                    <p className='flex justify-between'><span>Consumo:</span><span>{formatCurrency(groupTotalConsumo)}</span></p>
+                                    <div className='flex justify-between items-center'><div className='flex items-center gap-1.5'><input type="checkbox" checked={incluirTaxa} onChange={handleTaxaChange} className="h-4 w-4"/> <label>Taxa 10%:</label></div><span>{formatCurrency(groupTaxaServico)}</span></div>
+                                    <div className='flex justify-between items-center'><label>Acréscimos:</label><NumericFormat value={groupAcrescimosCents / 100} onValueChange={handleAcrescimosValueChange} className="w-24 text-right border rounded dark:bg-gray-700" thousandSeparator="." decimalSeparator="," prefix="R$ " decimalScale={2} fixedDecimalScale /></div>
+                                    <div className='flex justify-between items-center'><label>Descontos:</label><NumericFormat value={groupDescontosCents / 100} onValueChange={handleDescontosValueChange} className="w-24 text-right border rounded dark:bg-gray-700" thousandSeparator="." decimalSeparator="," prefix="R$ " decimalScale={2} fixedDecimalScale /></div>
+                                    <hr className='my-2' />
+                                    <p className='flex justify-between items-center text-base font-bold'><span>Total:</span><span onClick={() => handleValorClick(groupTotalAPagar)} className="cursor-pointer text-blue-600">{formatCurrency(groupTotalAPagar)}</span></p>
+                                    {groupSaldoDevedor > 0 && (
+                                        <div className="flex justify-between items-center text-red-600 font-black text-lg mt-1 pt-1 border-t border-red-200 dark:border-red-900/50">
+                                            <span>FALTA PAGAR:</span>
+                                            <span 
+                                                onClick={() => handleValorClick(Number(groupSaldoDevedor.toFixed(2)))} 
+                                                className="cursor-pointer hover:underline animate-pulse"
+                                                title="Clique para cobrar o saldo restante"
+                                            >
+                                                {formatCurrency(groupSaldoDevedor)}
+                                            </span>
+                                        </div>
+                                    )}
+                                    {/* EXIBIÇÃO DO VALOR DIVIDIDO COM CORREÇÃO DE TIPOS */}
+                                   {groupTotalAPagar > 0 && numeroPessoas > 1 && (
+                                       <div className='mt-2 p-2 bg-blue-100 dark:bg-blue-900/30 border border-blue-200 rounded flex justify-between items-center shadow-inner'>
+                                            <span className="text-blue-800 dark:text-blue-300 font-bold text-xs uppercase italic">Dividido por pessoa:</span>
+                                            <button 
+                                                type="button"
+                                                onClick={() => handleValorClick(Number((Number(groupTotalAPagar) / Number(numeroPessoas)).toFixed(2)))} 
+                                                className="font-black text-blue-700 dark:text-blue-200 text-base"
+                                            >
+                                                {formatCurrency(Number(groupTotalAPagar) / Number(numeroPessoas))}
+                                            </button>
+                                        </div>
+                                    )}
 
-                            <div className="lg:col-span-2 space-y-4"> 
-                                <div className='text-sm border dark:border-gray-700 p-3 rounded bg-gray-50 dark:bg-gray-800 space-y-2'> 
-                                    <p className='flex justify-between'><span>Consumo:</span><span className='font-semibold'>{formatCurrency(groupTotalConsumo)}</span></p> 
-                                    <div className='flex justify-between items-center'><div className='flex items-center gap-1.5'><input type="checkbox" id="incluir-taxa" checked={incluirTaxa} onChange={handleTaxaChange} className="h-4 w-4 rounded bg-gray-200 dark:bg-gray-600 border-gray-300 dark:border-gray-500"/> <label htmlFor="incluir-taxa">Taxa Serviço (10%):</label></div><span className='font-semibold'>{formatCurrency(groupTaxaServico)}</span></div> 
-                                    <div className='flex justify-between items-center'><label htmlFor="acrescimos">Acréscimos:</label><NumericFormat id="acrescimos" value={groupAcrescimosCents === 0 ? '' : groupAcrescimosCents / 100} onValueChange={handleAcrescimosValueChange} className="w-24 pl-6 pr-1 py-0.5 text-right border dark:border-gray-600 rounded sm:text-sm bg-gray-50 dark:bg-gray-700" thousandSeparator="." decimalSeparator="," prefix="R$ " decimalScale={2} fixedDecimalScale allowNegative={false} /></div> 
-                                    <div className='flex justify-between items-center'><label htmlFor="descontos">Descontos (-):</label><NumericFormat id="descontos" value={groupDescontosCents === 0 ? '' : groupDescontosCents / 100} onValueChange={handleDescontosValueChange} className="w-24 pl-6 pr-1 py-0.5 text-right border dark:border-gray-600 rounded sm:text-sm bg-gray-50 dark:bg-gray-700" thousandSeparator="." decimalSeparator="," prefix="R$ " decimalScale={2} fixedDecimalScale allowNegative={false} /></div> 
-                                    <hr className='my-2 dark:border-gray-700' /> 
-                                    <p className='flex justify-between items-center text-base font-bold'><span>Total a Pagar:</span><span onClick={() => handleValorClick(groupTotalAPagar)} className="cursor-pointer hover:text-blue-500 dark:hover:text-blue-400 transition-colors" title="Clique para usar este valor">{formatCurrency(groupTotalAPagar)}</span></p> 
-                                    <div className='mt-2 pt-2 border-t dark:border-gray-700 flex justify-end items-center gap-2 text-sm'><label htmlFor="numero-pessoas">Dividir por:</label><input type="number" id="numero-pessoas" min="1" value={numeroPessoas} onChange={(e) => setNumeroPessoas(Math.max(1, parseInt(e.target.value) || 1))} className="w-16 px-2 py-1 border dark:border-gray-600 rounded text-center bg-gray-50 dark:bg-gray-700"/></div> 
-                                </div> 
-                                
-                                <div className='border dark:border-gray-700 rounded bg-gray-50 dark:bg-gray-800 overflow-hidden shadow-sm'> 
-                                    <h4 className="text-sm font-medium p-2 border-b dark:border-gray-700 bg-gray-100 dark:bg-gray-700">Pagamentos Realizados</h4> 
-                                    <div className='p-2'> 
-                                        {groupPaymentsList.length === 0 ? (<p className='italic text-xs text-center py-2'>Nenhum pagamento registrado.</p>) : (
-                                            <ul className='text-xs space-y-1 max-h-28 overflow-y-auto'>
-                                                {groupPaymentsList.map(p => (
-                                                    <li key={p.id} className='flex justify-between border-b dark:border-gray-700 pb-1 last:border-0'>
-                                                        <div><span className='font-medium'>{p.nome_forma_pagamento}</span><span className="block text-gray-500 text-[10px]">{formatDateTime(p.data_hora)}</span></div>
-                                                        <span className="font-semibold ml-2">{formatCurrency(Number(p.valor))}</span>
-                                                    </li>
-                                                ))}
-                                            </ul>
-                                        )} 
-                                    </div> 
-                                    <div className="p-2 bg-gray-100 dark:bg-gray-700 border-t dark:border-gray-600 text-right text-sm font-bold">Total Pago: {formatCurrency(groupTotalPago)}</div> 
-                                </div> 
-
-                                {openSession && groupSaldoDevedor > 0.001 && ( 
-                                    <div className='mt-3 p-3 border dark:border-gray-700 rounded bg-blue-50 dark:bg-blue-900/20 shadow-inner'> 
-                                        <h4 className="text-base font-semibold mb-2 text-center text-blue-800 dark:text-blue-300">Registrar Pagamento</h4> 
-                                        <form onSubmit={handleRegisterPayment} className="grid grid-cols-6 gap-3 items-end"> 
-                                            <div className="col-span-6 sm:col-span-3"><label className="block text-xs mb-0.5">Forma*</label><select required value={selectedPaymentMethodId} onChange={(e)=>setSelectedPaymentMethodId(e.target.value)} disabled={isProcessingPayment||isLoadingPayMethods||!paymentMethods.length} className="w-full text-sm border dark:border-gray-600 rounded p-1.5 bg-white dark:bg-gray-700"><option value="" disabled>{isLoadingPayMethods?'...':(!paymentMethods.length?'Cadastre':'Selecione')}</option>{paymentMethods.map(m=><option key={m.id} value={m.id}>{m.nome}</option>)}</select></div> 
-                                            <div className="col-span-3 sm:col-span-3"><label className="block text-xs mb-0.5">Valor*</label><NumericFormat key={paymentInputKey} value={paymentValueCents === null ? '' : paymentValueCents} onValueChange={handlePaymentValueChange} placeholder="R$ 0,00" disabled={isProcessingPayment} required className="w-full text-sm border dark:border-gray-600 rounded p-1.5 bg-white dark:bg-gray-700" thousandSeparator="." decimalSeparator="," prefix="R$ " decimalScale={2} fixedDecimalScale allowNegative={false} /></div> 
-                                            <div className="col-span-6"><label className="block text-xs mb-0.5">Detalhes</label><input type="text" value={paymentDetails} onChange={(e)=>setPaymentDetails(e.target.value)} disabled={isProcessingPayment} placeholder="NSU, nome no PIX, etc." className="w-full text-sm border dark:border-gray-600 rounded p-1.5 bg-white dark:bg-gray-700"/></div> 
-                                            <div className="col-span-6"><button type="submit" disabled={isProcessingPayment || !openSession || !paymentValueCents || paymentValueCents <= 0} className="w-full text-sm font-bold p-2 border rounded text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 transition-colors shadow">{isProcessingPayment ? 'Processando...' : `Adicionar ${formatCurrency((paymentValueCents || 0))}`}</button></div> 
-                                        </form> 
-                                    </div> 
-                                )} 
-
-                                <div className='flex justify-around items-center gap-4 mt-6'> 
-                                    <button type="button" onClick={handlePrintConferencia} disabled={isPrinting} className="px-4 py-3 text-sm font-bold rounded shadow-md flex items-center gap-2 bg-gray-500 hover:bg-gray-600 text-white disabled:opacity-50 transition-colors"> 
-                                        <FiPrinter size={18}/> {isPrinting ? 'Aguarde...' : 'Conferência'} 
-                                    </button> 
-                                    <button onClick={() => handleFinalizarTransacao()} className={`px-6 py-3 text-white rounded shadow-md font-bold text-lg transition-all ${ groupSaldoDevedor > 0.01 || !openSession ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700 active:scale-95' }`} disabled={groupSaldoDevedor > 0.01 || !openSession}> 
-                                        {groupSaldoDevedor > 0.01 ? `Falta ${formatCurrency(groupSaldoDevedor)}` : 'Finalizar Conta'} 
-                                    </button> 
-                                </div> 
-                            </div> 
-                        </div> 
-                    </div> 
+                                    <div className='mt-2 pt-2 border-t flex justify-end items-center gap-2 text-sm'>
+                                        <label>Dividir por:</label>
+                                        <input type="number" min="1" value={numeroPessoas} onChange={(e) => setNumeroPessoas(Math.max(1, parseInt(e.target.value) || 1))} className="w-16 border rounded text-center dark:bg-gray-700"/>
+                                    </div>
+                                </div>
+                                <div className='border dark:border-gray-700 rounded bg-gray-50 dark:bg-gray-800 overflow-hidden shadow-sm'>
+                                    <h4 className="text-sm font-medium p-2 border-b bg-gray-100 dark:bg-gray-700">Pagamentos</h4>
+                                    <div className='p-2'>
+                                        {groupPaymentsList.length === 0 ? <p className='text-center italic py-2'>Vazio.</p> : (
+                                            <ul className='text-xs space-y-1 max-h-28 overflow-y-auto'>{groupPaymentsList.map(p => (<li key={p.id} className='flex justify-between border-b pb-1'><div><span>{p.nome_forma_pagamento}</span></div><span className="font-semibold">{formatCurrency(Number(p.valor))}</span></li>))}</ul>
+                                        )}
+                                    </div>
+                                    <div className="p-2 bg-gray-100 dark:bg-gray-700 border-t text-right text-sm font-bold">Total Pago: {formatCurrency(groupTotalPago)}</div>
+                                </div>
+                                {groupSaldoDevedor > 0.001 && (
+                                    <div className='mt-3 p-3 border dark:border-gray-700 rounded bg-blue-50 dark:bg-blue-900/20'>
+                                        {comandaError && <p className="mb-2 text-xs text-center text-red-600">{comandaError}</p>}
+                                        <form onSubmit={handleRegisterPayment} className="grid grid-cols-6 gap-3 items-end">
+                                            <div className="col-span-6 sm:col-span-3"><label className="text-xs">Forma*</label><select required value={selectedPaymentMethodId} onChange={(e)=>setSelectedPaymentMethodId(e.target.value)} disabled={isLoadingPayMethods} className="w-full text-sm border rounded p-1.5 dark:bg-gray-700"><option value="">Selecione</option>{paymentMethods.map(m=><option key={m.id} value={m.id}>{m.nome}</option>)}</select></div>
+                                            <div className="col-span-3 sm:col-span-3"><label className="text-xs">Valor*</label><NumericFormat key={paymentInputKey} value={paymentValueCents === null ? '' : paymentValueCents} onValueChange={handlePaymentValueChange} className="w-full text-sm border rounded p-1.5 dark:bg-gray-700" thousandSeparator="." decimalSeparator="," prefix="R$ " decimalScale={2} fixedDecimalScale allowNegative={false} /></div>
+                                            <div className="col-span-6"><input type="text" value={paymentDetails} onChange={(e)=>setPaymentDetails(e.target.value)} placeholder="Detalhes" className="w-full text-sm border rounded p-1.5 dark:bg-gray-800"/></div>
+                                            <div className="col-span-6"><button type="submit" disabled={isProcessingPayment || !paymentValueCents} className="w-full text-sm font-bold p-2 border rounded text-white bg-blue-600">Adicionar {formatCurrency(paymentValueCents || 0)}</button></div>
+                                        </form>
+                                    </div>
+                                )}
+                                <div className='flex gap-4 mt-6'>
+                                    <button onClick={handlePrintConferencia} disabled={isPrinting} className="flex-1 px-4 py-3 bg-gray-500 text-white rounded"><FiPrinter className="inline mr-2"/>Conferência</button>
+                                    <button 
+    onClick={() => handleFinalizarTransacao()} 
+    className={`flex-1 px-4 py-3 text-white rounded font-bold transition-all ${ groupSaldoDevedor > 0.01 ? 'bg-gray-400 cursor-not-allowed shadow-none' : 'bg-green-600 hover:bg-green-700 shadow-md' }`} 
+    disabled={groupSaldoDevedor > 0.01}
+>
+    {groupSaldoDevedor > 0.01 ? `FALTA ${formatCurrency(groupSaldoDevedor)}` : 'FINALIZAR CONTA'}
+</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 )}
             </main>
-            
-            {/* COMPONENTES DE MODAIS */}
             <ConsultaComandaModal isOpen={showConsultaModal} onClose={() => setShowConsultaModal(false)} />
             <OpenSessionModal isOpen={showOpenModal} onClose={() => setShowOpenModal(false)} onSuccess={handleOpenSuccess} />
             {openSession && <CloseSessionModal isOpen={showCloseModal} onClose={() => setShowCloseModal(false)} onSuccess={handleCloseSuccess} sessionToClose={openSession} />}
             {openSession && <MovementFormModal isOpen={showMovementModal} onClose={() => setShowMovementModal(false)} onSuccess={handleMovementSuccess} sessionId={openSession.id} />}
-            
-            {/* [NOVO] MODAL DE ERROS DE IMPRESSÃO */}
-            <PrintErrorsModal 
-                isOpen={showPrintErrorsModal} 
-                onClose={() => setShowPrintErrorsModal(false)} 
-                errors={printErrors} 
-                onRetry={handleRetryPrint} 
-            />
-
+            <PrintErrorsModal isOpen={showPrintErrorsModal} onClose={() => setShowPrintErrorsModal(false)} errors={printErrors} onRetry={handleRetryPrint} />
         </div>
     );
 };
