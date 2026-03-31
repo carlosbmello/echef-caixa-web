@@ -3,16 +3,21 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 export const formatCurrency = (value: string | number | null | undefined): string => {
-    let numberValue: number;
     if (value === null || value === undefined) return 'R$ -';
-    if (typeof value === 'string') {
-        const cleanedValue = value.replace(/R\$\s?/, '').replace(/\./g, '').replace(',', '.');
-        numberValue = parseFloat(cleanedValue);
-    } else {
-        numberValue = value;
-    }
+    
+    // Converte para número garantindo que seja um float (decimal)
+    // Se for string "37.00", parseFloat transforma em 37.00
+    const numberValue = typeof value === 'string' ? parseFloat(value) : value;
+
     if (isNaN(numberValue)) return 'R$ -';
-    return numberValue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    
+    // O toLocaleString formata corretamente 37.00 para R$ 37,00
+    return numberValue.toLocaleString('pt-BR', { 
+        style: 'currency', 
+        currency: 'BRL',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2 
+    });
 };
 
 export const formatDateTime = (dateString: string | null | undefined): string => {
