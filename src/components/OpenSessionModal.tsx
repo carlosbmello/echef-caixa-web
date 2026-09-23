@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { NumericFormat, NumberFormatValues } from 'react-number-format';
 import { sessionService, CreateSessionPayload } from '../services/sessionService';
 import { toast } from 'react-toastify';
@@ -9,10 +9,25 @@ interface OpenSessionModalProps {
     onSuccess: () => void;
 }
 
+const EVENTOS_DISPONIVEIS = [
+    "KARAOKÊ",
+    "FLASHBACK",
+    "STANDUP COMEDY",
+    "MPB",
+    "BATALHA DE BANDAS",
+    "EVENTO FECHADO",
+    "FUNCIONAMENTO NORMAL"
+];
+
 const OpenSessionModal: React.FC<OpenSessionModalProps> = ({ isOpen, onClose, onSuccess }) => {
     const [openingValue, setOpeningValue] = useState<number | undefined>(undefined);
+    const [eventoNome, setEventoNome] = useState<string>(EVENTOS_DISPONIVEIS[0]);
+    const [menuDigitalAtivo, setMenuDigitalAtivo] = useState<boolean>(true);
+    
     const [isProcessing, setIsProcessing] = useState(false);
     const [error, setError] = useState<string | null>(null);
+
+    if (!isOpen) return null;
 
     const handleValueChange = (values: NumberFormatValues) => {
         setOpeningValue(values.floatValue);
@@ -20,6 +35,8 @@ const OpenSessionModal: React.FC<OpenSessionModalProps> = ({ isOpen, onClose, on
 
     const handleCloseAndReset = () => {
         setOpeningValue(undefined);
+        setEventoNome(EVENTOS_DISPONIVEIS[0]);
+        setMenuDigitalAtivo(true);
         setError(null);
         setIsProcessing(false);
         onClose();
@@ -35,75 +52,81 @@ const OpenSessionModal: React.FC<OpenSessionModalProps> = ({ isOpen, onClose, on
         setError(null);
 
         try {
-            // O valor aqui é enviado como DECIMAL (ex: 100.00), que é o correto para esta rota.
             const payload: CreateSessionPayload = {
-                valor_abertura: openingValue
+                valor_abertura: openingValue,
+                evento_nome: eventoNome,
+                menu_digital_ativo: menuDigitalAtivo
             };
-            
-            await sessionService.openSession(payload);
-            toast.success("Caixa aberto com sucesso!");
-            onSuccess();
-            handleCloseAndReset();
 
+            await sessionService.openSession(payload);
+            toast.success('Caixa aberto com sucesso!');
+            handleCloseAndReset();
+            onSuccess();
         } catch (err: any) {
-            const errorMessage = err.response?.data?.message || err.message || "Falha ao abrir caixa.";
-            setError(errorMessage);
-            toast.error(errorMessage);
+            setError(err.response?.data?.error || err.message || 'Erro ao abrir o caixa.');
         } finally {
             setIsProcessing(false);
         }
     };
 
-    useEffect(() => {
-        if (!isOpen) {
-            handleCloseAndReset();
-        }
-    }, [isOpen]);
-
-    if (!isOpen) return null;
-
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-50 p-4 transition-opacity duration-300">
-             <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-xl w-full max-w-sm transform transition-all duration-300 text-gray-800 dark:text-gray-200">
-                <div className="flex justify-between items-center mb-4">
-                     <h2 className="text-xl font-semibold">Abrir Caixa</h2>
-                     <button onClick={handleCloseAndReset} disabled={isProcessing} className="text-gray-400 hover:text-gray-700 dark:hover:text-gray-300" aria-label="Fechar">
-                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4">
+            <div className="bg-gray-900 rounded-lg shadow-xl w-full max-w-md border border-gray-700 overflow-hidden">
+                <div className="p-4 border-b border-gray-700 bg-gray-800">
+                    <h3 className="text-lg font-bold text-white">Abertura de Caixa</h3>
+                </div>
+                <div className="p-6 space-y-5">
+                    {error && <div className="p-3 bg-red-900/50 border border-red-500 text-red-200 rounded text-sm">{error}</div>}
+                    
+                    <div>
+                        <label className="block text-sm font-medium text-gray-300 mb-1">Valor Inicial (Troco) *</label>
+                        <NumericFormat 
+                            value={openingValue} 
+                            onValueChange={handleValueChange} 
+                            thousandSeparator="." 
+                            decimalSeparator="," 
+                            prefix="R$ " 
+                            decimalScale={2} 
+                            fixedDecimalScale 
+                            allowNegative={false} 
+                            className="w-full p-3 bg-gray-800 border border-gray-600 rounded text-white text-lg font-bold focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-all" 
+                            placeholder="R$ 0,00" 
+                            autoFocus
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-300 mb-1">Evento de Hoje</label>
+                        <select 
+                            value={eventoNome} 
+                            onChange={(e) => setEventoNome(e.target.value)}
+                            className="w-full p-3 bg-gray-800 border border-gray-600 rounded text-white text-sm focus:ring-2 focus:ring-green-500 outline-none"
+                        >
+                            {EVENTOS_DISPONIVEIS.map(ev => (
+                                <option key={ev} value={ev}>{ev}</option>
+                            ))}
+                        </select>
+                    </div>
+
+                    <div className="flex items-center justify-between p-3 bg-gray-800 border border-gray-600 rounded">
+                        <div>
+                            <p className="text-sm font-bold text-white">Autoatendimento (Mesa)</p>
+                            <p className="text-xs text-gray-400">Permite clientes pedirem pelo celular.</p>
+                        </div>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" checked={menuDigitalAtivo} onChange={(e) => setMenuDigitalAtivo(e.target.checked)} className="sr-only peer" />
+                            <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500"></div>
+                        </label>
+                    </div>
+
+                </div>
+                <div className="p-4 border-t border-gray-700 bg-gray-800 flex justify-end gap-3">
+                    <button onClick={handleCloseAndReset} disabled={isProcessing} className="px-4 py-2 text-gray-300 hover:text-white font-medium">Cancelar</button>
+                    <button onClick={handleOpenSession} disabled={isProcessing} className="px-6 py-2 bg-green-600 text-white rounded font-bold hover:bg-green-500 disabled:opacity-50">
+                        {isProcessing ? 'Abrindo...' : 'Abrir Caixa'}
                     </button>
                 </div>
-                 
-                 {error && (
-                     <div role="alert" className="mb-4 text-center text-red-700 bg-red-100 dark:text-red-300 dark:bg-red-900/20 border border-red-300 dark:border-red-500/50 p-3 rounded-md text-sm">
-                         <p><b>Erro:</b> {error}</p>
-                     </div>
-                 )}
-
-                 <div className="mb-5">
-                     <label htmlFor="opening-value" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Valor Inicial (Troco) *</label>
-                     <NumericFormat
-                         id="opening-value"
-                         value={openingValue === undefined ? '' : openingValue}
-                         onValueChange={handleValueChange}
-                         thousandSeparator="." decimalSeparator="," prefix="R$ "
-                         decimalScale={2} fixedDecimalScale allowNegative={false}
-                         placeholder="R$ 0,00"
-                         className="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 rounded-md px-3 py-2 text-lg text-center focus:ring-indigo-500 focus:border-indigo-500 disabled:bg-gray-100 dark:disabled:bg-gray-800"
-                         autoFocus
-                         disabled={isProcessing}
-                         onKeyDown={(e) => { if (e.key === 'Enter') handleOpenSession(); }}
-                     />
-                     <p className='text-xs text-gray-500 dark:text-gray-400 mt-1 text-center'>Informe o valor disponível em caixa para troco.</p>
-                 </div>
-
-                 <div className="flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-3 gap-3 mt-6">
-                     <button type="button" onClick={handleCloseAndReset} disabled={isProcessing} className="w-full sm:w-auto justify-center px-4 py-2 border border-gray-300 dark:border-gray-500 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50">
-                        Cancelar
-                     </button>
-                     <button type="button" onClick={handleOpenSession} disabled={isProcessing || openingValue === undefined || openingValue < 0} className={`w-full sm:w-auto justify-center px-6 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white transition-colors duration-150 ${isProcessing || openingValue === undefined || openingValue < 0 ? 'bg-green-300 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500'}`}>
-                         {isProcessing ? 'Abrindo...' : 'Abrir Caixa'}
-                     </button>
-                 </div>
-             </div>
+            </div>
         </div>
     );
 };

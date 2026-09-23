@@ -125,8 +125,9 @@ const SessionStatus: React.FC<{
     onClose: () => void; 
     onMove: () => void; 
     onConsult: () => void;
+    onToggleDigitalMenu: (status: boolean) => void; // <<< NOVO
     isAllowed: boolean 
-}> = ({ openSession, isLoading, error, onOpen, onClose, onMove, onConsult, isAllowed }) => (
+}> = ({ openSession, isLoading, error, onOpen, onClose, onMove, onConsult, onToggleDigitalMenu, isAllowed }) => (
     <div className={`px-4 py-2 bg-white dark:bg-gray-900 rounded-lg shadow border-l-4 ${openSession ? 'border-green-500' : 'border-red-500'} mb-4 transition-all`}>
         <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
             <div className='flex-grow text-sm text-gray-700 dark:text-gray-200 flex flex-wrap items-center gap-x-4'>
@@ -143,10 +144,25 @@ const SessionStatus: React.FC<{
                         </div>
                         <span className="hidden sm:inline text-gray-300">|</span>
                         <span>Op: <strong>{openSession.nome_usuario_abertura}</strong></span>
+                        
+                        {/* NOVO: Exibição do Evento */}
                         <span className="hidden sm:inline text-gray-300">|</span>
-                        <span>{formatDateTime(openSession.data_abertura)}</span>
+                        <span className="bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200 px-2 py-0.5 rounded text-xs font-bold uppercase">
+                            {openSession.evento_nome || 'NORMAL'}
+                        </span>
+                        
                         <span className="hidden sm:inline text-gray-300">|</span>
                         <span>Ini: <strong>{formatCurrency(Number(openSession.valor_abertura))}</strong></span>
+                        
+                        {/* NOVO: Toggle Rápido do Menu Digital */}
+                        <span className="hidden sm:inline text-gray-300">|</span>
+                        <label className="flex items-center cursor-pointer gap-2" title="Ativar/Desativar Autoatendimento">
+                            <span className="text-xs font-semibold">App Cliente:</span>
+                            <div className="relative">
+                                <input type="checkbox" checked={Boolean(openSession.menu_digital_ativo)} onChange={(e) => onToggleDigitalMenu(e.target.checked)} className="sr-only peer" />
+                                <div className="w-9 h-5 bg-gray-400 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-green-500"></div>
+                            </div>
+                        </label>
                     </>
                 ) : (
                     <div className="flex items-center gap-2">
@@ -352,7 +368,16 @@ const CashierMainPage: React.FC = () => {
     const handleAcrescimosValueChange = (v: NumberFormatValues) => { setGroupAcrescimosCents(v.floatValue ? Math.round(v.floatValue * 100) : 0); };
     const handleDescontosValueChange = (v: NumberFormatValues) => { setGroupDescontosCents(v.floatValue ? Math.round(v.floatValue * 100) : 0); };
     const handleShowOpenModal=()=>{setShowOpenModal(true);}; const handleShowCloseModal=()=>{setShowCloseModal(true);}; const handleShowMovementModal=()=>{setShowMovementModal(true);}; const handleOpenSuccess=()=>{setShowOpenModal(false);fetchInitialData();fetchOpenComandas();}; const handleCloseSuccess=()=>{setShowCloseModal(false);fetchInitialData();fetchOpenComandas();}; const handleMovementSuccess = () => { setShowMovementModal(false); fetchInitialData(); }; const handleLogout=()=>{logout();}; 
-    const handleIniciarFechamento = () => { setNumeroPessoas(1); setSelectedPaymentMethodId(''); setPaymentValueCents(null); setPaymentDetails(''); setGroupAcrescimosCents(0); setGroupDescontosCents(0); setGroupPaymentsList([]); setViewMode('fechamento'); };
+    const handleIniciarFechamento = () => { 
+        setNumeroPessoas(1); 
+        setSelectedPaymentMethodId(''); 
+        setPaymentValueCents(null); 
+        setPaymentDetails(''); 
+        setGroupAcrescimosCents(0); 
+        setGroupDescontosCents(0); 
+        setGroupPaymentsList([]); 
+        setViewMode('fechamento'); 
+    };
 
     const handlePrintConferencia = async () => {
         if (!selectedComandas.length || isPrinting) return;
@@ -372,6 +397,18 @@ const CashierMainPage: React.FC = () => {
     const handleValorClick = (valor: number) => { if (valor > 0) { setPaymentValueCents(valor); setPaymentInputKey(Date.now()); } };
     const handlePaymentValueChange = (v: NumberFormatValues) => { setPaymentValueCents(v.floatValue || null); };
 
+    // --- NOVA FUNÇÃO: LIGA/DESLIGA MENU DIGITAL ---
+    const handleToggleMenuDigital = async (status: boolean) => {
+        if (!openSession) return;
+        try {
+            await sessionService.toggleMenuDigital(openSession.id, status);
+            toast.success(`Menu digital ${status ? 'ativado' : 'desativado'} com sucesso!`);
+            fetchInitialData(); // Atualiza a tela para refletir o novo estado do banco
+        } catch (err) {
+            toast.error("Erro ao alterar o status do menu.");
+        }
+    };
+
     useEffect(() => { if (!initialFetchDoneRef.current) { fetchInitialData(); fetchOpenComandas(); fetchPrintErrors(); initialFetchDoneRef.current = true; } }, [fetchInitialData, fetchOpenComandas, fetchPrintErrors]);
     useEffect(() => { const interval = setInterval(fetchPrintErrors, 15000); return () => clearInterval(interval); }, [fetchPrintErrors]);
     useEffect(() => { if (viewMode === 'monitor') fetchOpenComandas(); else if (viewMode === 'fechamento' && selectedComandas.length > 0) fetchComandaDetails(selectedComandas); }, [viewMode, selectedComandas, fetchComandaDetails, fetchOpenComandas]);
@@ -386,16 +423,29 @@ const CashierMainPage: React.FC = () => {
     useEffect(() => { if (addComandaInputRef.current) setTimeout(() => addComandaInputRef.current?.focus(), 100); }, [viewMode]);
     useEffect(() => { const root = window.document.documentElement; root.classList.remove(isDarkMode ? 'light' : 'dark'); root.classList.add(isDarkMode ? 'dark' : 'light'); localStorage.setItem('theme', isDarkMode ? 'dark' : 'light'); }, [isDarkMode]);
     useEffect(() => {
-    if (viewMode === 'monitor') {
-        // Aguarda um milissegundo para garantir que o elemento apareceu na tela
-        setTimeout(() => addComandaInputRef.current?.focus(), 100);
-    }
-}, [viewMode]);
+        if (viewMode === 'monitor') {
+            setTimeout(() => addComandaInputRef.current?.focus(), 100);
+        }
+    }, [viewMode]);
+
     return (
         <div className="flex flex-col h-screen bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 font-sans">
             <CashierHeader user={user} onLogout={handleLogout} onToggleDark={toggleDarkMode} isDark={isDarkMode} errorCount={printErrors.length} onOpenErrors={() => setShowPrintErrorsModal(true)} />
             <main className="flex-1 p-4 sm:p-6 overflow-y-auto space-y-6">
-                <SessionStatus openSession={openSession} isLoading={isLoadingSession} error={error} onOpen={handleShowOpenModal} onClose={handleShowCloseModal} onMove={handleShowMovementModal} onConsult={() => setShowConsultaModal(true)} isAllowed={isCashierAllowed} />
+                
+                {/* --- COMPONENTE COM A NOVA FUNÇÃO INJETADA --- */}
+                <SessionStatus 
+                    openSession={openSession} 
+                    isLoading={isLoadingSession} 
+                    error={error} 
+                    onOpen={handleShowOpenModal} 
+                    onClose={handleShowCloseModal} 
+                    onMove={handleShowMovementModal} 
+                    onConsult={() => setShowConsultaModal(true)} 
+                    onToggleDigitalMenu={handleToggleMenuDigital} // <<< ADICIONADO AQUI
+                    isAllowed={isCashierAllowed} 
+                />
+
                 {openSession && viewMode === 'monitor' && (
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <MonitorView comandasList={openComandasList} isLoading={isLoadingMonitor} error={monitorError} onFetch={fetchOpenComandas} onComandaClick={handleAddComandaPorClique} />

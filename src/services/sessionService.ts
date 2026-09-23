@@ -8,6 +8,8 @@ export interface Session {
   nome_usuario_abertura?: string;
   data_abertura: string;
   valor_abertura: string | number;
+  evento_nome?: string;          // <<< NOVO
+  menu_digital_ativo?: boolean;  // <<< NOVO
   usuario_fechamento_id?: number | null;
   nome_usuario_fechamento?: string | null;
   data_fechamento?: string | null;
@@ -22,6 +24,8 @@ export interface Session {
 
 export interface CreateSessionPayload {
     valor_abertura: number;
+    evento_nome?: string;          // <<< MOVIDO PARA CÁ (CORRETO)
+    menu_digital_ativo?: boolean;  // <<< MOVIDO PARA CÁ (CORRETO)
     observacao_abertura?: string | null;
 }
 
@@ -87,8 +91,13 @@ const closeSession = async (sessionId: number, payload: CloseSessionPayload): Pr
     }
 };
 
+const toggleMenuDigital = async (sessionId: number, status: boolean): Promise<void> => {
+    await api.patch(`/sessions/${sessionId}/toggle-menu`, { menu_digital_ativo: status });
+};
+
 export const sessionService = {
     getLastOpenSession,
     openSession,
     closeSession,
+    toggleMenuDigital,
 };
