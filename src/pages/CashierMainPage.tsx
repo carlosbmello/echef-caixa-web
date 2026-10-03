@@ -296,15 +296,46 @@ const CashierMainPage: React.FC = () => {
     };
 
     const fetchComandaDetails = useCallback(async (comandas: Comanda[]) => { 
-        if (comandas.length === 0) { setComandaItems([]); setGroupPaymentsList([]); setGroupTotalConsumo(0); setGroupTotalPago(0); return; } 
+        if (comandas.length === 0) { 
+            setComandaItems([]); 
+            setGroupPaymentsList([]); 
+            setGroupTotalConsumo(0); 
+            setGroupTotalPago(0); 
+            return; 
+        } 
+        
         setIsLoadingItems(true); 
         try { 
+            // 1. Busca os Itens Consumidos
             const detailedComandasPromises = comandas.map(c => comandaService.getComandaByNumero(c.numero || '')); 
             const detailedComandas: ComandaComItens[] = await Promise.all(detailedComandasPromises); 
             const allItems = detailedComandas.flatMap(c => (c.itens || []).map(item => ({...item, numero_comanda: c.numero, cliente_nome_comanda: c.cliente_nome}))); 
+            
             setComandaItems(allItems); 
             setGroupTotalConsumo(detailedComandas.reduce((sum, c) => sum + Number(c.total_atual_calculado || 0), 0)); 
-        } catch (err: any) { setComandaError("Erro ao carregar."); } finally { setIsLoadingItems(false); } 
+            
+            // 2. [CORREÇÃO] Busca os Pagamentos Parciais salvos no banco para essas comandas
+            let pagamentosSalvos: UIPayment[] = [];
+            for (const comanda of comandas) {
+                const response = await api.get(`/transacoes/pagamento-parcial/${comanda.id}`);
+                const pagamentosDaComanda = response.data.map((p: any) => ({
+                    id: p.id,
+                    valor: p.valor,
+                    data_hora: p.data_hora,
+                    nome_forma_pagamento: p.nome_forma_pagamento,
+                    detalhes: p.detalhes || null
+                }));
+                pagamentosSalvos = [...pagamentosSalvos, ...pagamentosDaComanda];
+            }
+            
+            // Preenche a lista da tela com os pagamentos que já estavam no banco
+            setGroupPaymentsList(pagamentosSalvos);
+
+        } catch (err: any) { 
+            setComandaError("Erro ao carregar detalhes."); 
+        } finally { 
+            setIsLoadingItems(false); 
+        } 
     }, []);
 
     const handleRegisterPayment = async (e: React.FormEvent) => {
@@ -336,6 +367,32 @@ const CashierMainPage: React.FC = () => {
             await transacaoService.finalizar(payload);
             toast.success("Sucesso!"); setSelectedComandas([]); handleVoltarParaMonitor();
         } catch (err: any) { toast.error("Erro ao finalizar."); } finally { setIsProcessingPayment(false); }
+    };
+
+    const handlePagamentoParcial = async () => {
+        if (!selectedComandas.length || !openSession || groupPaymentsList.length === 0) return;
+        
+        setIsProcessingPayment(true);
+        try {
+            // Pega apenas o ID da primeira comanda selecionada (pagamento parcial foca em 1 comanda)
+            const payload = {
+                comandaId: selectedComandas[0].id,
+                pagamentos: groupPaymentsList.map(p => { 
+                    const methodId = paymentMethods.find(pm => pm.nome === p.nome_forma_pagamento)?.id; 
+                    return { forma_pagamento_id: methodId || 0, valor: Number(p.valor), nome_forma_pagamento: p.nome_forma_pagamento }; 
+                })
+            };
+
+            await api.post('/transacoes/pagamento-parcial', payload);
+            
+            toast.success("Pagamento parcial salvo! A comanda continua aberta.");
+            setSelectedComandas([]); 
+            handleVoltarParaMonitor();
+        } catch (err: any) { 
+            toast.error("Erro ao salvar pagamento parcial."); 
+        } finally { 
+            setIsProcessingPayment(false); 
+        }
     };
 
    const handleAddComanda = async (e?: React.FormEvent) => { 
@@ -428,7 +485,7 @@ const CashierMainPage: React.FC = () => {
         }
     }, [viewMode]);
 
-    return (
+   return (
         <div className="flex flex-col h-screen bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 font-sans">
             <CashierHeader user={user} onLogout={handleLogout} onToggleDark={toggleDarkMode} isDark={isDarkMode} errorCount={printErrors.length} onOpenErrors={() => setShowPrintErrorsModal(true)} />
             <main className="flex-1 p-4 sm:p-6 overflow-y-auto space-y-6">
@@ -442,7 +499,7 @@ const CashierMainPage: React.FC = () => {
                     onClose={handleShowCloseModal} 
                     onMove={handleShowMovementModal} 
                     onConsult={() => setShowConsultaModal(true)} 
-                    onToggleDigitalMenu={handleToggleMenuDigital} // <<< ADICIONADO AQUI
+                    onToggleDigitalMenu={handleToggleMenuDigital} 
                     isAllowed={isCashierAllowed} 
                 />
 
@@ -520,7 +577,7 @@ const CashierMainPage: React.FC = () => {
                                             </span>
                                         </div>
                                     )}
-                                    {/* EXIBIÇÃO DO VALOR DIVIDIDO COM CORREÇÃO DE TIPOS */}
+                                    
                                    {groupTotalAPagar > 0 && numeroPessoas > 1 && (
                                        <div className='mt-2 p-2 bg-blue-100 dark:bg-blue-900/30 border border-blue-200 rounded flex justify-between items-center shadow-inner'>
                                             <span className="text-blue-800 dark:text-blue-300 font-bold text-xs uppercase italic">Dividido por pessoa:</span>
@@ -560,14 +617,34 @@ const CashierMainPage: React.FC = () => {
                                     </div>
                                 )}
                                 <div className='flex gap-4 mt-6'>
-                                    <button onClick={handlePrintConferencia} disabled={isPrinting} className="flex-1 px-4 py-3 bg-gray-500 text-white rounded"><FiPrinter className="inline mr-2"/>Conferência</button>
+                                    <button onClick={handlePrintConferencia} disabled={isPrinting} className="flex-1 px-4 py-3 bg-gray-500 text-white rounded font-bold hover:bg-gray-600 shadow-sm transition-colors">
+                                        <FiPrinter className="inline mr-2"/>Conferência
+                                    </button>
+
+                                    {/* BOTÃO INTELIGENTE: Muda de cor e função dependendo se há pagamentos parciais */}
                                     <button 
-    onClick={() => handleFinalizarTransacao()} 
-    className={`flex-1 px-4 py-3 text-white rounded font-bold transition-all ${ groupSaldoDevedor > 0.01 ? 'bg-gray-400 cursor-not-allowed shadow-none' : 'bg-green-600 hover:bg-green-700 shadow-md' }`} 
-    disabled={groupSaldoDevedor > 0.01}
->
-    {groupSaldoDevedor > 0.01 ? `FALTA ${formatCurrency(groupSaldoDevedor)}` : 'FINALIZAR CONTA'}
-</button>
+                                        onClick={() => {
+                                            if (groupSaldoDevedor > 0.01 && groupPaymentsList.length > 0) {
+                                                handlePagamentoParcial();
+                                            } else {
+                                                handleFinalizarTransacao();
+                                            }
+                                        }} 
+                                        className={`flex-1 px-4 py-3 text-white rounded font-bold transition-all shadow-md
+                                            ${groupSaldoDevedor > 0.01 && groupPaymentsList.length === 0 ? 'bg-gray-400 cursor-not-allowed shadow-none' : ''}
+                                            ${groupSaldoDevedor > 0.01 && groupPaymentsList.length > 0 ? 'bg-yellow-500 hover:bg-yellow-600' : ''}
+                                            ${groupSaldoDevedor <= 0.01 ? 'bg-green-600 hover:bg-green-700' : ''}
+                                        `} 
+                                        disabled={(groupSaldoDevedor > 0.01 && groupPaymentsList.length === 0) || isProcessingPayment}
+                                    >
+                                        {isProcessingPayment ? 'PROCESSANDO...' : (
+                                            <>
+                                                {groupSaldoDevedor > 0.01 && groupPaymentsList.length === 0 && `FALTA ${formatCurrency(groupSaldoDevedor)}`}
+                                                {groupSaldoDevedor > 0.01 && groupPaymentsList.length > 0 && 'SALVAR PAGAMENTO PARCIAL'}
+                                                {groupSaldoDevedor <= 0.01 && 'FINALIZAR CONTA'}
+                                            </>
+                                        )}
+                                    </button>
                                 </div>
                             </div>
                         </div>
