@@ -543,14 +543,38 @@ const CashierMainPage: React.FC = () => {
                                 <div className='p-3 border dark:border-gray-700 rounded bg-white dark:bg-gray-900'>
                                     <h4 className="text-base font-semibold mb-2 border-b pb-2">Itens Consumidos</h4>
                                     {isLoadingItems ? <p className="text-center py-4 italic">Buscando...</p> : (
-                                        <ul className='text-xs space-y-1.5 max-h-[65vh] overflow-y-auto pr-2'>
-                                            {comandaItems.filter(i => i.status_item !== 'cancelado').map((item) => (
+                                        <ul className='text-xs space-y-2 max-h-[65vh] overflow-y-auto pr-2'>
+                                            {comandaItems.filter(i => i.status_item !== 'cancelado').map((item: any) => (
                                                 <li key={item.id} className='flex justify-between py-2 border-b'>
-                                                    <div className="flex-1"><span className="font-bold text-sm block">{item.produto_nome}</span>{item.observacao_item && <span className="block text-gray-500 italic">{item.observacao_item}</span>}</div>
-                                                    <div className="text-right"><span className="block text-xs">{formatQuantity(item.quantidade)} x {formatCurrency(item.preco_unitario_momento)}</span><span className="block font-bold text-sm">
-    {formatCurrency(Number(item.quantidade) * Number(item.preco_unitario_momento))}
-</span></div>
-                                                    <button onClick={() => handleCancelarItem(item.id)} className="ml-2 text-red-500"><FiTrash2 size={16} /></button>
+                                                    <div className="flex-1">
+                                                        <span className="font-bold text-sm block text-gray-800 dark:text-gray-200">
+                                                            {item.produto_nome}
+                                                        </span>
+                                                        
+                                                        {item.observacao_item && (
+                                                            <span className="block text-gray-500 italic mt-0.5">
+                                                                Obs: {item.observacao_item}
+                                                            </span>
+                                                        )}
+                                                        
+                                                        {/* <<< NOVO: LINHA DE AUDITORIA (HORA E GARÇOM) >>> */}
+                                                        <span className="block text-[10px] text-gray-400 mt-1 font-medium tracking-wide uppercase">
+                                                            🕒 {formatDateTime(item.data_hora_pedido)} &nbsp;•&nbsp; 👤 Op: {item.nome_garcom || 'Autoatendimento'}
+                                                        </span>
+                                                    </div>
+                                                    
+                                                    <div className="text-right">
+                                                        <span className="block text-xs text-gray-500">
+                                                            {formatQuantity(item.quantidade)} x {formatCurrency(item.preco_unitario_momento)}
+                                                        </span>
+                                                        <span className="block font-bold text-sm text-gray-900 dark:text-white">
+                                                            {formatCurrency(Number(item.quantidade) * Number(item.preco_unitario_momento))}
+                                                        </span>
+                                                    </div>
+                                                    
+                                                    <button onClick={() => handleCancelarItem(item.id)} className="ml-3 text-red-500 hover:text-red-700 transition-colors" title="Cancelar Item">
+                                                        <FiTrash2 size={16} />
+                                                    </button>
                                                 </li>
                                             ))}
                                         </ul>
