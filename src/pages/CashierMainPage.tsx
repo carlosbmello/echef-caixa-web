@@ -358,15 +358,39 @@ const CashierMainPage: React.FC = () => {
 
     const handleFinalizarTransacao = async (skipConfirmation = false, pagamentosParaFinalizar?: UIPayment[]) => {
         if (!selectedComandas.length || !openSession) return;
+        
+        // As duas linhas abaixo usam o skipConfirmation para fazer os alertas na tela!
         if (groupSaldoDevedor > 0.01 && !skipConfirmation) { toast.error("Ainda há saldo."); return; }
         if (!skipConfirmation && !window.confirm(`Finalizar ${selectedComandas.length} comanda(s)?`)) return;
+        
         setIsProcessingPayment(true);
         try {
             const listaDePagamentos = pagamentosParaFinalizar || groupPaymentsList;
-            const payload: FinalizarTransacaoPayload = { comandaIds: selectedComandas.map(c => c.id), taxa_servico: groupTaxaServico, acrescimos: groupAcrescimosCents / 100, descontos: groupDescontosCents / 100, pagamentos: listaDePagamentos.map(p => { const methodId = paymentMethods.find(pm => pm.nome === p.nome_forma_pagamento)?.id; return { forma_pagamento_id: methodId || 0, valor: Number(p.valor), nome_forma_pagamento: p.nome_forma_pagamento }; }) };
+            const payload: FinalizarTransacaoPayload = { 
+                comandaIds: selectedComandas.map(c => c.id), 
+                taxa_servico: groupTaxaServico, 
+                acrescimos: groupAcrescimosCents / 100, 
+                descontos: groupDescontosCents / 100, 
+                pagamentos: listaDePagamentos.map(p => { 
+                    const methodId = paymentMethods.find(pm => pm.nome === p.nome_forma_pagamento)?.id; 
+                    return { 
+                        forma_pagamento_id: methodId || 0, 
+                        valor: Number(p.valor), 
+                        nome_forma_pagamento: p.nome_forma_pagamento,
+                        detalhes: p.detalhes // Envia os detalhes digitados
+                    }; 
+                }) 
+            };
+            
             await transacaoService.finalizar(payload);
-            toast.success("Sucesso!"); setSelectedComandas([]); handleVoltarParaMonitor();
-        } catch (err: any) { toast.error("Erro ao finalizar."); } finally { setIsProcessingPayment(false); }
+            toast.success("Sucesso!"); 
+            setSelectedComandas([]); 
+            handleVoltarParaMonitor();
+        } catch (err: any) { 
+            toast.error("Erro ao finalizar."); 
+        } finally { 
+            setIsProcessingPayment(false); 
+        }
     };
 
     const handlePagamentoParcial = async () => {
@@ -374,12 +398,16 @@ const CashierMainPage: React.FC = () => {
         
         setIsProcessingPayment(true);
         try {
-            // Pega apenas o ID da primeira comanda selecionada (pagamento parcial foca em 1 comanda)
             const payload = {
                 comandaId: selectedComandas[0].id,
                 pagamentos: groupPaymentsList.map(p => { 
                     const methodId = paymentMethods.find(pm => pm.nome === p.nome_forma_pagamento)?.id; 
-                    return { forma_pagamento_id: methodId || 0, valor: Number(p.valor), nome_forma_pagamento: p.nome_forma_pagamento }; 
+                    return { 
+                        forma_pagamento_id: methodId || 0, 
+                        valor: Number(p.valor), 
+                        nome_forma_pagamento: p.nome_forma_pagamento,
+                        detalhes: p.detalhes // <<< NOVO: Envia os detalhes digitados
+                    }; 
                 })
             };
 
@@ -389,7 +417,7 @@ const CashierMainPage: React.FC = () => {
             setSelectedComandas([]); 
             handleVoltarParaMonitor();
         } catch (err: any) { 
-            toast.error("Erro ao salvar pagamento parcial."); 
+            toast.error(err.response?.data?.message || "Erro ao salvar pagamento parcial."); 
         } finally { 
             setIsProcessingPayment(false); 
         }
