@@ -314,10 +314,17 @@ const CashierMainPage: React.FC = () => {
             setComandaItems(allItems); 
             setGroupTotalConsumo(detailedComandas.reduce((sum, c) => sum + Number(c.total_atual_calculado || 0), 0)); 
             
-            // 2. [CORREÇÃO] Busca os Pagamentos Parciais salvos no banco para essas comandas
+            // 2. Busca os Pagamentos Parciais (Adiantamentos)
             let pagamentosSalvos: UIPayment[] = [];
+            
             for (const comanda of comandas) {
+                // Certifique-se de que a comanda.id seja válida!
+                if (!comanda.id) continue;
+
+                // [CUIDADO] Verifique a sua rota do Backend se é /transacoes/pagamento-parcial ou /admin/transacoes...
                 const response = await api.get(`/transacoes/pagamento-parcial/${comanda.id}`);
+                
+                // Mapeia o que veio do banco para o padrão UIPayment do Front
                 const pagamentosDaComanda = response.data.map((p: any) => ({
                     id: p.id,
                     valor: p.valor,
@@ -325,14 +332,16 @@ const CashierMainPage: React.FC = () => {
                     nome_forma_pagamento: p.nome_forma_pagamento,
                     detalhes: p.detalhes || null
                 }));
+                
                 pagamentosSalvos = [...pagamentosSalvos, ...pagamentosDaComanda];
             }
             
-            // Preenche a lista da tela com os pagamentos que já estavam no banco
+            // Preenche a caixinha "Pagamentos" com os dados do banco!
             setGroupPaymentsList(pagamentosSalvos);
 
         } catch (err: any) { 
-            setComandaError("Erro ao carregar detalhes."); 
+            console.error("Erro ao buscar detalhes:", err);
+            setComandaError("Erro ao carregar detalhes da comanda."); 
         } finally { 
             setIsLoadingItems(false); 
         } 
