@@ -286,7 +286,14 @@ const handleReimprimirRecibo = async () => {
                                                 <div key={p.id} className="flex justify-between p-2 border-b dark:border-gray-600 last:border-b-0">
                                                     <div>
                                                         <span className="font-semibold">{p.nome_forma_pagamento}</span>
-                                                        <span className="block text-xs text-gray-500">{formatDateTime(p.data_hora)}</span>
+                                                        <span className="block text-[10px] text-gray-500">{formatDateTime(p.data_hora)}</span>
+                                                        
+                                                        {/* <<< NOVO: Exibe a descrição/observação se existir >>> */}
+                                                        {p.descricao && (
+                                                            <span className="block text-xs text-gray-400 italic mt-0.5 truncate max-w-[200px]" title={p.descricao}>
+                                                                {p.descricao.replace('Pagamento Parcial ', '').replace('Pagamento ', '')}
+                                                            </span>
+                                                        )}
                                                     </div>
                                                     <span className="font-semibold text-lg">{formatCurrency(Number(p.valor))}</span>
                                                 </div>
