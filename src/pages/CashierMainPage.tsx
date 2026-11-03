@@ -661,7 +661,26 @@ const CashierMainPage: React.FC = () => {
                                     <h4 className="text-sm font-medium p-2 border-b bg-gray-100 dark:bg-gray-700">Pagamentos</h4>
                                     <div className='p-2'>
                                         {groupPaymentsList.length === 0 ? <p className='text-center italic py-2'>Vazio.</p> : (
-                                            <ul className='text-xs space-y-1 max-h-28 overflow-y-auto'>{groupPaymentsList.map(p => (<li key={p.id} className='flex justify-between border-b pb-1'><div><span>{p.nome_forma_pagamento}</span></div><span className="font-semibold">{formatCurrency(Number(p.valor))}</span></li>))}</ul>
+                                            <ul className='text-xs space-y-2 max-h-32 overflow-y-auto pr-1'>
+                                                {groupPaymentsList.map(p => (
+                                                    <li key={p.id} className='flex flex-col border-b border-gray-200 dark:border-gray-700 pb-1.5'>
+                                                        <div className='flex justify-between items-center'>
+                                                            <span className="font-semibold text-gray-700 dark:text-gray-300 uppercase">
+                                                                {p.nome_forma_pagamento}
+                                                            </span>
+                                                            <span className="font-bold text-gray-900 dark:text-white">
+                                                                {formatCurrency(Number(p.valor))}
+                                                            </span>
+                                                        </div>
+                                                        {/* <<< CORREÇÃO: Renderiza a descrição/detalhes se houver >>> */}
+                                                        {p.detalhes && (
+                                                            <span className="text-[10px] text-gray-500 italic mt-0.5 truncate w-full" title={p.detalhes}>
+                                                                {p.detalhes.replace('Pgto Parcial - ', '')} 
+                                                            </span>
+                                                        )}
+                                                    </li>
+                                                ))}
+                                            </ul>
                                         )}
                                     </div>
                                     <div className="p-2 bg-gray-100 dark:bg-gray-700 border-t text-right text-sm font-bold">Total Pago: {formatCurrency(groupTotalPago)}</div>
