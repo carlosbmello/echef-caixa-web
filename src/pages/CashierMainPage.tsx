@@ -402,20 +402,30 @@ const CashierMainPage: React.FC = () => {
         }
     };
 
+   // --- NOVA FUNÇÃO: SALVAR PAGAMENTO PARCIAL BLINDADO ---
     const handlePagamentoParcial = async () => {
         if (!selectedComandas.length || !openSession || groupPaymentsList.length === 0) return;
         
         setIsProcessingPayment(true);
         try {
+            // 1. FILTRA APENAS OS PAGAMENTOS NOVOS (que o id é um timestamp gigante e não um ID real do banco)
+            const pagamentosNovos = groupPaymentsList.filter(p => p.id > 1000000000000);
+
+            if (pagamentosNovos.length === 0) {
+                toast.info("Nenhum pagamento novo para salvar.");
+                setIsProcessingPayment(false);
+                return;
+            }
+
             const payload = {
                 comandaId: selectedComandas[0].id,
-                pagamentos: groupPaymentsList.map(p => { 
+                pagamentos: pagamentosNovos.map(p => { 
                     const methodId = paymentMethods.find(pm => pm.nome === p.nome_forma_pagamento)?.id; 
                     return { 
                         forma_pagamento_id: methodId || 0, 
                         valor: Number(p.valor), 
                         nome_forma_pagamento: p.nome_forma_pagamento,
-                        detalhes: p.detalhes // <<< NOVO: Envia os detalhes digitados
+                        detalhes: p.detalhes // Envia os detalhes digitados limpos
                     }; 
                 })
             };
@@ -423,6 +433,8 @@ const CashierMainPage: React.FC = () => {
             await api.post('/transacoes/pagamento-parcial', payload);
             
             toast.success("Pagamento parcial salvo! A comanda continua aberta.");
+            
+            // 2. Limpa TUDO e força a tela a rebuscar os dados frescos e únicos do banco!
             setSelectedComandas([]); 
             handleVoltarParaMonitor();
         } catch (err: any) { 
