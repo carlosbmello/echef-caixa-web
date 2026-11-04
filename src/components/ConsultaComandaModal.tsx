@@ -292,14 +292,13 @@ const handleReimprimirRecibo = async () => {
                                                         {/* <<< CORREÇÃO: Descrição limpa, responsiva e sem cortar o texto >>> */}
                                                         {p.descricao && (
                                                             <span 
-                                                                className="block text-xs text-gray-400 italic mt-0.5 leading-tight" 
-                                                                style={{ wordBreak: 'break-word', whiteSpace: 'normal' }}
+                                                                className="block text-xs text-gray-400 italic mt-1 leading-snug break-words whitespace-normal overflow-visible" 
                                                             >
                                                                 {p.descricao
                                                                     .replace('Pagamento Parcial', 'Pgto Parcial')
                                                                     .replace('Pagamento ', '')
-                                                                    .replace(` (Cmd #${p.numero_comanda || '1010'})`, '') // Tira a comanda repetida do BD antigo
-                                                                    .replace(' - Obs: ', ' - ') // Tira a palavra Obs:
+                                                                    .replace(` (Cmd #${p.numero_comanda || '1010'})`, '') 
+                                                                    .replace(' - Obs: ', ' - ') 
                                                                 }
                                                             </span>
                                                         )}
