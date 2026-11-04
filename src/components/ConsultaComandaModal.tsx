@@ -284,18 +284,27 @@ const handleReimprimirRecibo = async () => {
                                             <h3 className='font-bold mb-2 text-base'>Pagamentos Realizados</h3>
                                             {detalheConsulta.pagamentos?.length > 0 ? detalheConsulta.pagamentos.map((p: any) => (
                                                 <div key={p.id} className="flex justify-between p-2 border-b dark:border-gray-600 last:border-b-0">
-                                                    <div>
+                                                    {/* Usamos flex-grow e pr-4 para garantir que o texto não sobreponha o preço */}
+                                                    <div className="flex-grow pr-4">
                                                         <span className="font-semibold">{p.nome_forma_pagamento}</span>
                                                         <span className="block text-[10px] text-gray-500">{formatDateTime(p.data_hora)}</span>
                                                         
-                                                             {/* <<< NOVO: Exibe a descrição/observação se existir >>> */}
+                                                        {/* <<< CORREÇÃO: Descrição limpa, responsiva e sem cortar o texto >>> */}
                                                         {p.descricao && (
-                                                            <span className="block text-xs text-gray-400 italic mt-0.5 truncate max-w-[200px]" title={p.descricao}>
-                                                                {p.descricao.replace('Pagamento Parcial ', '').replace('Pagamento ', '')}
+                                                            <span 
+                                                                className="block text-xs text-gray-400 italic mt-0.5 leading-tight" 
+                                                                style={{ wordBreak: 'break-word', whiteSpace: 'normal' }}
+                                                            >
+                                                                {p.descricao
+                                                                    .replace('Pagamento Parcial', 'Pgto Parcial')
+                                                                    .replace('Pagamento ', '')
+                                                                    .replace(` (Cmd #${p.numero_comanda || '1010'})`, '') // Tira a comanda repetida do BD antigo
+                                                                    .replace(' - Obs: ', ' - ') // Tira a palavra Obs:
+                                                                }
                                                             </span>
                                                         )}
                                                     </div>
-                                                    <span className="font-semibold text-lg">{formatCurrency(Number(p.valor))}</span>
+                                                    <span className="font-semibold text-lg flex-shrink-0 text-right">{formatCurrency(Number(p.valor))}</span>
                                                 </div>
                                             )) : <p className="text-sm italic p-2">Nenhum pagamento encontrado.</p>}
                                             <div className="flex justify-between font-bold border-t dark:border-gray-600 mt-1 pt-2 text-base">
